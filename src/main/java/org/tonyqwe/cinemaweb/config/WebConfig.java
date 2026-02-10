@@ -8,13 +8,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Resource
-    private JwtAuthInterceptor jwtAuthInterceptor;
-
+    // Spring Security 已经接管认证与鉴权，这里暂时不再注册基于拦截器的 JWT 校验
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 目前只保护 /api/demo/secure 这个接口，后续有更多受保护接口可以在这里追加
-        registry.addInterceptor(jwtAuthInterceptor)
-                .addPathPatterns("/api/demo/secure");
+        // 留空或仅注册与安全无关的拦截器
     }
 }
