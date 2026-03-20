@@ -38,7 +38,7 @@ public class SecurityConfig {
                 // 认证与授权规则
                 .authorizeHttpRequests(auth -> auth
                         // 登录、登出和当前会话接口开放给未认证用户
-                        .requestMatchers("/api/sessions", "/api/logout", "/error").permitAll()
+                        .requestMatchers("/api/sessions", "/api/sessions/register", "/api/logout", "/error").permitAll()
                         // 其他 /api/** 接口需要认证
                         .requestMatchers("/api/**").authenticated()
                         // 其他静态资源等全部放行（如有需要可再收紧）
