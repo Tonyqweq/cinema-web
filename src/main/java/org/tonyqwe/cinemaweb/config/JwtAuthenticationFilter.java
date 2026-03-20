@@ -13,7 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.tonyqwe.cinemaweb.domain.entity.sysUsers;
+import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
 import org.tonyqwe.cinemaweb.service.LoginService;
 import org.tonyqwe.cinemaweb.service.PermissionService;
 
@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 如果上下文中还没有认证信息，则尝试根据 token 认证
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            sysUsers currentUser = loginService.getCurrentUser(token);
+            SysUsers currentUser = loginService.getCurrentUser(token);
             if (currentUser != null) {
                 // 查询该用户的权限编码，封装为 Spring Security 的 GrantedAuthority
                 List<String> codes = permissionService.getPermissionCodesByUserId(currentUser.getId());

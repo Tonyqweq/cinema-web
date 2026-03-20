@@ -1,7 +1,9 @@
 package org.tonyqwe.cinemaweb.service;
 
 import org.tonyqwe.cinemaweb.domain.dto.LoginRequest;
-import org.tonyqwe.cinemaweb.domain.entity.sysUsers;
+import org.tonyqwe.cinemaweb.domain.dto.RegisterRequest;
+import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
+import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
 
 public interface LoginService {
     /**
@@ -17,7 +19,7 @@ public interface LoginService {
      * 2. 校验 Redis 中存储的 token 是否与当前 token 一致；
      * 3. 返回用户信息（密码字段置空），无效时返回 null。
      */
-    sysUsers getCurrentUser(String token);
+    SysUsers getCurrentUser(String token);
 
     /**
      * 登出：
@@ -26,4 +28,9 @@ public interface LoginService {
      * 3. 不抛异常，静默处理。
      */
     void logout(String token);
+
+
+    SysUsers getByUsername(String username);
+
+    void register(RegisterRequest request);
 }
