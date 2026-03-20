@@ -39,10 +39,19 @@ public class SessionController {
     }
 
     /**
-     * 另一种更直观的登出接口：POST /api/logout
+     * 注册
+     * POST /api/sessions/register
+     */
+//    @PostMapping("/sessions/register")
+//    public ResponseEntity<ResponseResult<LoginResponse>> register(@RequestBody LoginRequest request) {
+//
+//    }
+
+    /**
+     * 登出接口：POST /api/logout
      * 前端调用时需要携带 Authorization: Bearer xxx
      */
-    @PostMapping("/logout")
+    @PostMapping("/sessions/logout")
     public ResponseEntity<ResponseResult<Void>> logout(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {

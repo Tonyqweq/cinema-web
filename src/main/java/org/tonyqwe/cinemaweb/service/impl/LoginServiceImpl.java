@@ -1,7 +1,10 @@
 package org.tonyqwe.cinemaweb.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.tonyqwe.cinemaweb.domain.dto.LoginRequest;
 import org.tonyqwe.cinemaweb.domain.entity.sysUsers;
@@ -20,6 +23,8 @@ public class LoginServiceImpl implements LoginService {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+
 
     // 与 JwtUtil 中的过期时间保持一致（1 小时）
     private static final long EXPIRATION_SECONDS = 60 * 60;
