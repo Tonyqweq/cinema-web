@@ -24,6 +24,12 @@ app:
     access-token-ttl: 15m
     refresh-token-ttl: 7d
     secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32_BYTES_MIN_CHANGE_ME"
+    expiration-seconds: 3600
+  token:
+    redis-prefix: "login:token:"
+  cors:
+    allowed-origins:
+      - "http://localhost:5173"
 
 mybatis-plus:
   type-aliases-package: com.liu.entity.User # ?????
