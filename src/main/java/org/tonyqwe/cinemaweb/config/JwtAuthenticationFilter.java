@@ -14,7 +14,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
-import org.tonyqwe.cinemaweb.service.LoginService;
+import org.tonyqwe.cinemaweb.service.AuthService;
 import org.tonyqwe.cinemaweb.service.PermissionService;
 
 import java.io.IOException;
@@ -24,14 +24,14 @@ import java.util.stream.Collectors;
 /**
  * 基于 Spring Security 的 JWT 过滤器：
  * - 从 Authorization: Bearer xxx 中解析 token
- * - 使用 JwtUtil + Redis 校验 token
+ * - 使用 TokenService + Redis 校验 token
  * - 校验通过后，将当前用户信息放入 Spring Security 上下文
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Resource
-    private LoginService loginService;
+    private AuthService authService;
 
     @Resource
     private PermissionService permissionService;
@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 如果上下文中还没有认证信息，则尝试根据 token 认证
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            SysUsers currentUser = loginService.getCurrentUser(token);
+            SysUsers currentUser = authService.getCurrentUser(token);
             if (currentUser != null) {
                 // 查询该用户的权限编码，封装为 Spring Security 的 GrantedAuthority
                 List<String> codes = permissionService.getPermissionCodesByUserId(currentUser.getId());
