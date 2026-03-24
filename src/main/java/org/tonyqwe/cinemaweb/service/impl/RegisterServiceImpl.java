@@ -5,7 +5,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.tonyqwe.cinemaweb.domain.dto.RegisterRequest;
+import org.tonyqwe.cinemaweb.domain.entity.SysUserRole;
 import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
+import org.tonyqwe.cinemaweb.mapper.UserRoleMapper;
 import org.tonyqwe.cinemaweb.service.RegisterService;
 import org.tonyqwe.cinemaweb.service.UserService;
 
@@ -19,6 +21,9 @@ public class RegisterServiceImpl implements RegisterService {
 
     @Resource
     private PasswordEncoder passwordEncoder;
+
+    @Resource
+    private UserRoleMapper userRoleMapper;
 
     @Override
     @Transactional
@@ -38,5 +43,14 @@ public class RegisterServiceImpl implements RegisterService {
         user.setCreatedAt(new Date());
 
         userService.save(user);
+
+        if (user.getId() == null) {
+            throw new IllegalStateException("用户创建失败");
+        }
+
+        SysUserRole userRole = new SysUserRole();
+        userRole.setUserId(user.getId());
+        userRole.setRoleId(4);
+        userRoleMapper.insert(userRole);
     }
 }
