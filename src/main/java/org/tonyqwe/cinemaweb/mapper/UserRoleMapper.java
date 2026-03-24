@@ -2,6 +2,7 @@ package org.tonyqwe.cinemaweb.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Update;
 import org.tonyqwe.cinemaweb.domain.entity.SysUserRole;
 
 @Mapper
