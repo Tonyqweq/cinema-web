@@ -22,16 +22,33 @@ public class MovieController {
 
     /**
      * 分页查询电影列表
-     * GET /api/movies?page=1&pageSize=10
+     * GET /api/movies?page=1&pageSize=10&title=xxx&language=中文&country=中国&sortBy=duration_min&sortOrder=desc
      */
     @GetMapping
     public ResponseEntity<ResponseResult<MoviePageResponse>> list(
             @RequestParam(defaultValue = "1") long page,
-            @RequestParam(defaultValue = "10") long pageSize
+            @RequestParam(defaultValue = "10") long pageSize,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortOrder
     ) {
-        IPage<Movie> result = movieService.pageMovies(page, pageSize);
+        IPage<Movie> result = movieService.pageMovies(page, pageSize, title, language, country, sortBy, sortOrder);
         MoviePageResponse response = new MoviePageResponse(result.getTotal(), result.getRecords());
         return ResponseEntity.ok(ResponseResult.success(response));
+    }
+
+    /**
+     * 获取筛选项（语言/国家地区）
+     * GET /api/movies/filters
+     */
+    @GetMapping("/filters")
+    public ResponseEntity<ResponseResult<java.util.Map<String, Object>>> filters() {
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        map.put("languages", movieService.listLanguages());
+        map.put("countries", movieService.listCountries());
+        return ResponseEntity.ok(ResponseResult.success(map));
     }
 
     /**
