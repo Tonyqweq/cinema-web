@@ -51,11 +51,11 @@ public class GlobalExceptionHandler {
                 .body(ResponseResult.error(403, "account is disabled"));
     }
 
-    /** 业务冲突（如：用户名已存在） */
+    /** 参数/业务不合法（如：日期格式错误、资源不存在说明等） */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ResponseResult<Void>> handleIllegalArg(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ResponseResult.error(409, e.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseResult.error(400, e.getMessage()));
     }
 
     /** 其他未预期异常 */

@@ -3,8 +3,11 @@ package org.tonyqwe.cinemaweb.controller;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.tonyqwe.cinemaweb.domain.dto.MovieBodyRequest;
+import org.tonyqwe.cinemaweb.domain.dto.MovieImportResult;
 import org.tonyqwe.cinemaweb.domain.dto.MoviePageResponse;
 import org.tonyqwe.cinemaweb.domain.dto.UpdateMovieStatusRequest;
 import org.tonyqwe.cinemaweb.domain.entity.Movie;
@@ -52,6 +55,28 @@ public class MovieController {
     }
 
     /**
+     * 新增电影（无需 id，状态默认上架）
+     * POST /api/movies
+     */
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseResult<Movie>> create(@RequestBody @Valid MovieBodyRequest request) {
+        Movie created = movieService.createMovie(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseResult.success(created));
+    }
+
+    /**
+     * 从 Excel 批量导入（首行可为表头：title, original_title, language, country, duration_min, release_date, description, poster_url, trailer_url）
+     * POST /api/movies/import
+     */
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseResult<MovieImportResult>> importExcel(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+    ) throws java.io.IOException {
+        MovieImportResult result = movieService.importMoviesFromExcel(file);
+        return ResponseEntity.ok(ResponseResult.success(result));
+    }
+
+    /**
      * 获取电影详情
      * GET /api/movies/{id}
      */
@@ -63,6 +88,23 @@ public class MovieController {
                     .body(ResponseResult.error(404, "movie not found"));
         }
         return ResponseEntity.ok(ResponseResult.success(movie));
+    }
+
+    /**
+     * 更新电影信息（不可改 id、status）
+     * PUT /api/movies/{id}
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ResponseResult<Movie>> updateInfo(
+            @PathVariable("id") Long id,
+            @RequestBody @Valid MovieBodyRequest request
+    ) {
+        Movie updated = movieService.updateMovieInfo(id, request);
+        if (updated == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseResult.error(404, "movie not found"));
+        }
+        return ResponseEntity.ok(ResponseResult.success(updated));
     }
 
     /**
@@ -80,5 +122,19 @@ public class MovieController {
                     .body(ResponseResult.error(404, "movie not found"));
         }
         return ResponseEntity.ok(ResponseResult.success(updated));
+    }
+
+    /**
+     * 删除电影
+     * DELETE /api/movies/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseResult<Void>> delete(@PathVariable("id") Long id) {
+        boolean ok = movieService.deleteMovie(id);
+        if (!ok) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseResult.error(404, "movie not found"));
+        }
+        return ResponseEntity.ok(ResponseResult.success("deleted", null));
     }
 }
