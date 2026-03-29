@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.dto.LoginRequest;
 import org.tonyqwe.cinemaweb.domain.dto.LoginResponse;
 import org.tonyqwe.cinemaweb.domain.dto.RegisterRequest;
+import org.tonyqwe.cinemaweb.domain.dto.SessionInfoResponse;
 import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
 import org.tonyqwe.cinemaweb.service.AuthService;
+import org.tonyqwe.cinemaweb.service.PermissionService;
 import org.tonyqwe.cinemaweb.service.RegisterService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
 
@@ -23,6 +25,9 @@ public class SessionController {
 
     @Resource
     private RegisterService registerService;
+
+    @Resource
+    private PermissionService permissionService;
 
     /**
      * 创建会话（登录）
@@ -66,7 +71,7 @@ public class SessionController {
      * GET /api/sessions/current
      */
     @GetMapping("/sessions/current")
-    public ResponseEntity<ResponseResult<SysUsers>> getCurrentSession(HttpServletRequest request) {
+    public ResponseEntity<ResponseResult<SessionInfoResponse>> getCurrentSession(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -79,6 +84,12 @@ public class SessionController {
                     .body(ResponseResult.error(401, "invalid or expired token"));
         }
         currentUser.setPassword(null);
-        return ResponseEntity.ok(ResponseResult.success(currentUser));
+        int uid = currentUser.getId() == null ? 0 : currentUser.getId();
+        SessionInfoResponse body = new SessionInfoResponse(
+                currentUser,
+                permissionService.getRoleNamesByUserId(uid),
+                permissionService.getPermissionCodesByUserId(uid)
+        );
+        return ResponseEntity.ok(ResponseResult.success(body));
     }
 }

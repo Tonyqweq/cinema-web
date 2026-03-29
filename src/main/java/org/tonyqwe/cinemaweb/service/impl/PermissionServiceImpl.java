@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.tonyqwe.cinemaweb.domain.entity.SysPermission;
+import org.tonyqwe.cinemaweb.domain.entity.SysRole;
 import org.tonyqwe.cinemaweb.domain.entity.SysRolePermission;
 import org.tonyqwe.cinemaweb.domain.entity.SysUserRole;
 import org.tonyqwe.cinemaweb.mapper.PermissionMapper;
+import org.tonyqwe.cinemaweb.mapper.RoleMapper;
 import org.tonyqwe.cinemaweb.mapper.RolePermissionMapper;
 import org.tonyqwe.cinemaweb.mapper.UserRoleMapper;
 import org.tonyqwe.cinemaweb.service.PermissionService;
@@ -27,6 +29,9 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Resource
     private PermissionMapper permissionMapper;
+
+    @Resource
+    private RoleMapper roleMapper;
 
     @Override
     public List<String> getPermissionCodesByUserId(int userId) {
@@ -65,6 +70,35 @@ public class PermissionServiceImpl implements PermissionService {
         return perms.stream()
                 .map(SysPermission::getCode)
                 .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getRoleNamesByUserId(int userId) {
+        List<SysUserRole> userRoles = userRoleMapper.selectList(
+                new LambdaQueryWrapper<SysUserRole>()
+                        .eq(SysUserRole::getUserId, userId)
+        );
+        if (userRoles.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Integer> roleIds = userRoles.stream()
+                .map(SysUserRole::getRoleId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (roleIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<SysRole> roles = roleMapper.selectList(
+                new LambdaQueryWrapper<SysRole>().in(SysRole::getId, roleIds)
+        );
+        return roles.stream()
+                .map(SysRole::getName)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
     }

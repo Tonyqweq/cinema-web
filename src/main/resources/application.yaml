@@ -34,6 +34,25 @@ app:
   cors:
     allowed-origins:
       - "http://localhost:5173"
+  # 与 sys_roles.name 一致；无权限的用户访问对应 API 将返回 403
+  security:
+    movie-api-roles:
+      - SUPER_ADMIN
+      - ADMIN
+      - MOVIE_ADMIN
+      - MOVIE_STAFF
+    order-api-roles:
+      - SUPER_ADMIN
+      - ADMIN
+      - ORDER_ADMIN
+    user-api-roles:
+      - SUPER_ADMIN
+      - ADMIN
+      - USER_ADMIN
+    settings-api-roles:
+      - SUPER_ADMIN
+      - ADMIN
+      - SETTINGS_ADMIN
 
 mybatis-plus:
   type-aliases-package: com.liu.entity.User # ?????
