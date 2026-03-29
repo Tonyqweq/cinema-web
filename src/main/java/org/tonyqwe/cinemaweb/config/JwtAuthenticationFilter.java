@@ -52,11 +52,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             SysUsers currentUser = authService.getCurrentUser(token);
             if (currentUser != null) {
-                // 查询该用户的权限编码，封装为 Spring Security 的 GrantedAuthority
+                // 权限码（细粒度） + 角色名 ROLE_ 前缀（与 sys_roles.name 一致，供页面/API 区域鉴权）
                 List<String> codes = permissionService.getPermissionCodesByUserId(currentUser.getId());
+                List<String> roleNames = permissionService.getRoleNamesByUserId(currentUser.getId());
                 List<GrantedAuthority> authorities = codes.stream()
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
+                for (String roleName : roleNames) {
+                    if (roleName != null && !roleName.isBlank()) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + roleName.trim()));
+                    }
+                }
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(

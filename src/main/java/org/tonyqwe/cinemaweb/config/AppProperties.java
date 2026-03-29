@@ -15,6 +15,7 @@ public class AppProperties {
     private Jwt jwt = new Jwt();
     private Token token = new Token();
     private Cors cors = new Cors();
+    private Security security = new Security();
 
     public static class Jwt {
         private String secret = "demo-secret-key-123456-demo-secret-key-123456";
@@ -40,10 +41,31 @@ public class AppProperties {
         public void setAllowedOrigins(List<String> allowedOrigins) { this.allowedOrigins = allowedOrigins; }
     }
 
+    /**
+     * 与 sys_roles.name 一致的角色名列表；用于接口路径与 Spring Security hasAuthority("ROLE_xxx")。
+     */
+    public static class Security {
+        private List<String> movieApiRoles = List.of("SUPER_ADMIN", "MOVIE_ADMIN", "MOVIE_STAFF");
+        private List<String> orderApiRoles = List.of("SUPER_ADMIN", "ORDER_ADMIN");
+        private List<String> userApiRoles = List.of("SUPER_ADMIN", "USER_ADMIN");
+        private List<String> settingsApiRoles = List.of("SUPER_ADMIN", "SETTINGS_ADMIN");
+
+        public List<String> getMovieApiRoles() { return movieApiRoles; }
+        public void setMovieApiRoles(List<String> movieApiRoles) { this.movieApiRoles = movieApiRoles; }
+        public List<String> getOrderApiRoles() { return orderApiRoles; }
+        public void setOrderApiRoles(List<String> orderApiRoles) { this.orderApiRoles = orderApiRoles; }
+        public List<String> getUserApiRoles() { return userApiRoles; }
+        public void setUserApiRoles(List<String> userApiRoles) { this.userApiRoles = userApiRoles; }
+        public List<String> getSettingsApiRoles() { return settingsApiRoles; }
+        public void setSettingsApiRoles(List<String> settingsApiRoles) { this.settingsApiRoles = settingsApiRoles; }
+    }
+
     public Jwt getJwt() { return jwt; }
     public void setJwt(Jwt jwt) { this.jwt = jwt; }
     public Token getToken() { return token; }
     public void setToken(Token token) { this.token = token; }
     public Cors getCors() { return cors; }
     public void setCors(Cors cors) { this.cors = cors; }
+    public Security getSecurity() { return security; }
+    public void setSecurity(Security security) { this.security = security; }
 }

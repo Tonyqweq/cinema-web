@@ -37,13 +37,24 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 // 不创建 HTTP Session，完全基于 token
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // 认证与授权规则
+                // 认证与授权规则（先匹配更具体的路径）
                 .authorizeHttpRequests(auth -> auth
-                        // 登录、登出和当前会话接口开放给未认证用户
-                        .requestMatchers("/api/sessions", "/api/sessions/register", "/api/logout", "/error").permitAll()
-                        // 其他 /api/** 接口需要认证
+                        .requestMatchers("/api/sessions", "/api/sessions/register", "/error").permitAll()
+                        // 影片模块：仅允许配置的角色访问（与 app.security.movie-api-roles / sys_roles.name 一致）
+                        .requestMatchers("/api/movies/**")
+                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
+                                appProperties.getSecurity().getMovieApiRoles()))
+                        .requestMatchers("/api/orders/**")
+                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
+                                appProperties.getSecurity().getOrderApiRoles()))
+                        .requestMatchers("/api/users/**")
+                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
+                                appProperties.getSecurity().getUserApiRoles()))
+                        .requestMatchers("/api/settings/**")
+                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
+                                appProperties.getSecurity().getSettingsApiRoles()))
+                        // 示例与其它已登录接口：任意已认证用户
                         .requestMatchers("/api/**").authenticated()
-                        // 其他静态资源等全部放行（如有需要可再收紧）
                         .anyRequest().permitAll()
                 )
                 // 将 JWT 过滤器加在用户名密码过滤器之前
