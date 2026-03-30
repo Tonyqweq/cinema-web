@@ -11,8 +11,8 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@TableName("movie")
-public class Movie {
+@TableName("movies")
+public class Movies {
 
     @TableId(type = IdType.AUTO)
     private Long id; // 电影ID（主键）

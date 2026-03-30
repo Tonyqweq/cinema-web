@@ -45,11 +45,14 @@ public class AppProperties {
      * 与 sys_roles.name 一致的角色名列表；用于接口路径与 Spring Security hasAuthority("ROLE_xxx")。
      */
     public static class Security {
-        private List<String> movieApiRoles = List.of("SUPER_ADMIN", "MOVIE_ADMIN", "MOVIE_STAFF");
-        private List<String> orderApiRoles = List.of("SUPER_ADMIN", "ORDER_ADMIN");
-        private List<String> userApiRoles = List.of("SUPER_ADMIN", "USER_ADMIN");
-        private List<String> settingsApiRoles = List.of("SUPER_ADMIN", "SETTINGS_ADMIN");
+        private List<String> cinemaApiRoles = List.of("SUPER_ADMIN", "ADMIN", "MOVIE_STAFF");
+        private List<String> movieApiRoles = List.of("SUPER_ADMIN", "ADMIN", "MOVIE_STAFF");
+        private List<String> orderApiRoles = List.of("SUPER_ADMIN", "ADMIN");
+        private List<String> userApiRoles = List.of("SUPER_ADMIN", "ADMIN");
+        private List<String> settingsApiRoles = List.of("SUPER_ADMIN", "ADMIN");
 
+        public List<String> getCinemaApiRoles() { return cinemaApiRoles; }
+        public void setCinemaApiRoles(List<String> cinemaApiRoles) { this.cinemaApiRoles = movieApiRoles; }
         public List<String> getMovieApiRoles() { return movieApiRoles; }
         public void setMovieApiRoles(List<String> movieApiRoles) { this.movieApiRoles = movieApiRoles; }
         public List<String> getOrderApiRoles() { return orderApiRoles; }

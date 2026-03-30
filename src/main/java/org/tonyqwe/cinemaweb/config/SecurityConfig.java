@@ -40,6 +40,10 @@ public class SecurityConfig {
                 // 认证与授权规则（先匹配更具体的路径）
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/sessions", "/api/sessions/register", "/error").permitAll()
+                        //影院模块
+//                        .requestMatchers("")
+//                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
+//                                appProperties.getSecurity().getCinemaApiRoles()))
                         // 影片模块：仅允许配置的角色访问（与 app.security.movie-api-roles / sys_roles.name 一致）
                         .requestMatchers("/api/movies/**")
                         .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(

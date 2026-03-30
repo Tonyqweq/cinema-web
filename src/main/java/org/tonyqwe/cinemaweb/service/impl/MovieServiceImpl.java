@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.tonyqwe.cinemaweb.domain.dto.MovieBodyRequest;
 import org.tonyqwe.cinemaweb.domain.dto.MovieImportResult;
-import org.tonyqwe.cinemaweb.domain.entity.Movie;
+import org.tonyqwe.cinemaweb.domain.entity.Movies;
 import org.tonyqwe.cinemaweb.mapper.MovieMapper;
 import org.tonyqwe.cinemaweb.service.MovieService;
 
@@ -34,35 +34,35 @@ import java.util.Locale;
 import java.util.Map;
 
 @Service
-public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie> implements MovieService {
+public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movies> implements MovieService {
 
     @Resource
     private MovieMapper movieMapper;
 
     @Override
-    public IPage<Movie> pageMovies(long page, long pageSize, String title, String language, String country, String sortBy, String sortOrder) {
-        Page<Movie> mpPage = new Page<>(page, pageSize);
+    public IPage<Movies> pageMovies(long page, long pageSize, String title, String language, String country, String sortBy, String sortOrder) {
+        Page<Movies> mpPage = new Page<>(page, pageSize);
 
-        LambdaQueryWrapper<Movie> qw = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<Movies> qw = new LambdaQueryWrapper<>();
         if (title != null && !title.isBlank()) {
-            qw.like(Movie::getTitle, title.trim());
+            qw.like(Movies::getTitle, title.trim());
         }
         if (language != null && !language.isBlank()) {
-            qw.eq(Movie::getLanguage, language.trim());
+            qw.eq(Movies::getLanguage, language.trim());
         }
         if (country != null && !country.isBlank()) {
-            qw.eq(Movie::getCountry, country.trim());
+            qw.eq(Movies::getCountry, country.trim());
         }
 
         if (sortBy != null && !sortBy.isBlank()) {
             boolean asc = "asc".equalsIgnoreCase(sortOrder);
 
             if ("duration_min".equalsIgnoreCase(sortBy) || "durationMin".equalsIgnoreCase(sortBy)) {
-                if (asc) qw.orderByAsc(Movie::getDurationMin);
-                else qw.orderByDesc(Movie::getDurationMin);
+                if (asc) qw.orderByAsc(Movies::getDurationMin);
+                else qw.orderByDesc(Movies::getDurationMin);
             } else if ("release_date".equalsIgnoreCase(sortBy) || "releaseDate".equalsIgnoreCase(sortBy)) {
-                if (asc) qw.orderByAsc(Movie::getReleaseDate);
-                else qw.orderByDesc(Movie::getReleaseDate);
+                if (asc) qw.orderByAsc(Movies::getReleaseDate);
+                else qw.orderByDesc(Movies::getReleaseDate);
             }
         }
 
@@ -80,15 +80,15 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie> implements
     }
 
     @Override
-    public Movie getMovieById(Long id) {
+    public Movies getMovieById(Long id) {
         if (id == null) return null;
         return movieMapper.selectById(id);
     }
 
     @Override
-    public Movie updateMovieStatus(Long id, Integer status) {
+    public Movies updateMovieStatus(Long id, Integer status) {
         if (id == null || status == null) return null;
-        Movie movie = movieMapper.selectById(id);
+        Movies movie = movieMapper.selectById(id);
         if (movie == null) return null;
         movie.setStatus(status);
         movieMapper.updateById(movie);
@@ -109,9 +109,9 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie> implements
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Movie createMovie(MovieBodyRequest request) {
+    public Movies createMovie(MovieBodyRequest request) {
         Date now = new Date();
-        Movie movie = new Movie();
+        Movies movie = new Movies();
         applyWritableFields(movie, request);
         movie.setStatus(1);
         movie.setCreatedAt(now);
@@ -122,9 +122,9 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie> implements
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Movie updateMovieInfo(Long id, MovieBodyRequest request) {
+    public Movies updateMovieInfo(Long id, MovieBodyRequest request) {
         if (id == null) return null;
-        Movie movie = movieMapper.selectById(id);
+        Movies movie = movieMapper.selectById(id);
         if (movie == null) return null;
         applyWritableFields(movie, request);
         movie.setUpdatedAt(new Date());
@@ -196,7 +196,7 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movie> implements
         return result;
     }
 
-    private void applyWritableFields(Movie movie, MovieBodyRequest request) {
+    private void applyWritableFields(Movies movie, MovieBodyRequest request) {
         movie.setTitle(request.getTitle().trim());
         movie.setOriginalTitle(trimToNull(request.getOriginalTitle()));
         movie.setLanguage(trimToNull(request.getLanguage()));
