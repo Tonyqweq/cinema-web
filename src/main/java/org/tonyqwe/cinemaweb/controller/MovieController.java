@@ -10,7 +10,7 @@ import org.tonyqwe.cinemaweb.domain.dto.MovieBodyRequest;
 import org.tonyqwe.cinemaweb.domain.dto.MovieImportResult;
 import org.tonyqwe.cinemaweb.domain.dto.MoviePageResponse;
 import org.tonyqwe.cinemaweb.domain.dto.UpdateMovieStatusRequest;
-import org.tonyqwe.cinemaweb.domain.entity.Movie;
+import org.tonyqwe.cinemaweb.domain.entity.Movies;
 import org.tonyqwe.cinemaweb.service.MovieService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
 
@@ -37,7 +37,7 @@ public class MovieController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortOrder
     ) {
-        IPage<Movie> result = movieService.pageMovies(page, pageSize, title, language, country, sortBy, sortOrder);
+        IPage<Movies> result = movieService.pageMovies(page, pageSize, title, language, country, sortBy, sortOrder);
         MoviePageResponse response = new MoviePageResponse(result.getTotal(), result.getRecords());
         return ResponseEntity.ok(ResponseResult.success(response));
     }
@@ -59,8 +59,8 @@ public class MovieController {
      * POST /api/movies
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseResult<Movie>> create(@RequestBody @Valid MovieBodyRequest request) {
-        Movie created = movieService.createMovie(request);
+    public ResponseEntity<ResponseResult<Movies>> create(@RequestBody @Valid MovieBodyRequest request) {
+        Movies created = movieService.createMovie(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseResult.success(created));
     }
 
@@ -81,8 +81,8 @@ public class MovieController {
      * GET /api/movies/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseResult<Movie>> detail(@PathVariable("id") Long id) {
-        Movie movie = movieService.getMovieById(id);
+    public ResponseEntity<ResponseResult<Movies>> detail(@PathVariable("id") Long id) {
+        Movies movie = movieService.getMovieById(id);
         if (movie == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseResult.error(404, "movie not found"));
@@ -95,11 +95,11 @@ public class MovieController {
      * PUT /api/movies/{id}
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseResult<Movie>> updateInfo(
+    public ResponseEntity<ResponseResult<Movies>> updateInfo(
             @PathVariable("id") Long id,
             @RequestBody @Valid MovieBodyRequest request
     ) {
-        Movie updated = movieService.updateMovieInfo(id, request);
+        Movies updated = movieService.updateMovieInfo(id, request);
         if (updated == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseResult.error(404, "movie not found"));
@@ -112,11 +112,11 @@ public class MovieController {
      * PUT /api/movies/{id}/status
      */
     @PutMapping("/{id}/status")
-    public ResponseEntity<ResponseResult<Movie>> updateStatus(
+    public ResponseEntity<ResponseResult<Movies>> updateStatus(
             @PathVariable("id") Long id,
             @RequestBody @Valid UpdateMovieStatusRequest request
     ) {
-        Movie updated = movieService.updateMovieStatus(id, request.getStatus());
+        Movies updated = movieService.updateMovieStatus(id, request.getStatus());
         if (updated == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseResult.error(404, "movie not found"));
