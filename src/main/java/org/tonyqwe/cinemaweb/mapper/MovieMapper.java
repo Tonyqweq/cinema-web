@@ -7,10 +7,10 @@ import org.tonyqwe.cinemaweb.domain.entity.Movies;
 
 @Mapper
 public interface MovieMapper extends BaseMapper<Movies> {
-    @Select("SELECT DISTINCT language FROM movie WHERE language IS NOT NULL AND language <> '' ORDER BY language")
+    @Select("SELECT DISTINCT language FROM movies WHERE language IS NOT NULL AND language <> '' ORDER BY language")
     java.util.List<String> selectDistinctLanguages();
 
-    @Select("SELECT DISTINCT country FROM movie WHERE country IS NOT NULL AND country <> '' ORDER BY country")
+    @Select("SELECT DISTINCT country FROM movies WHERE country IS NOT NULL AND country <> '' ORDER BY country")
     java.util.List<String> selectDistinctCountries();
 }
 

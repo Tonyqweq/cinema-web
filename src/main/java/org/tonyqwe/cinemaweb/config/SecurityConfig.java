@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 认证与授权规则（先匹配更具体的路径）
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/sessions", "/api/sessions/register", "/error").permitAll()
+                        .requestMatchers("/api/sessions/**", "/error").permitAll()
                         //影院模块
                         .requestMatchers("/api/cinemas/**")
                         .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
