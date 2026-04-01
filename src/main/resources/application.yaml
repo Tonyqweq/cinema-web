@@ -21,6 +21,19 @@ spring:
       port: 6379
       password: xiejun198170
       database: 0
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 2419231380@qq.com
+    password: hcswprnzqjodebib
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+            trust: smtp.qq.com
 
 app:
   jwt:

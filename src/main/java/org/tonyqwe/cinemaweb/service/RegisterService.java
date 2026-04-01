@@ -7,5 +7,5 @@ import org.tonyqwe.cinemaweb.domain.dto.RegisterRequest;
  */
 public interface RegisterService {
 
-    void register(RegisterRequest request);
+    String register(RegisterRequest request);
 }

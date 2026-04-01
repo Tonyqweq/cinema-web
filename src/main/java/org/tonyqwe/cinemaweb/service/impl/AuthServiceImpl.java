@@ -2,6 +2,7 @@ package org.tonyqwe.cinemaweb.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,9 +11,12 @@ import org.tonyqwe.cinemaweb.domain.dto.LoginRequest;
 import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
 import org.tonyqwe.cinemaweb.mapper.UserMapper;
 import org.tonyqwe.cinemaweb.service.AuthService;
+import org.tonyqwe.cinemaweb.service.EmailService;
 import org.tonyqwe.cinemaweb.service.TokenService;
 import org.tonyqwe.cinemaweb.service.UserService;
 
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @Service
@@ -30,18 +34,43 @@ public class AuthServiceImpl implements AuthService {
     @Resource
     private TokenService tokenService;
 
+    @Resource
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Resource
+    private EmailService emailService;
+
     @Override
     public String login(LoginRequest request) {
         String username = request.getUsername();
         String password = request.getPassword();
-        if (username == null || password == null) {
-            throw new BadCredentialsException("invalid username or password");
+        String verificationCode = request.getVerificationCode();
+        
+        if (username == null || password == null || verificationCode == null) {
+            throw new BadCredentialsException("invalid username, password or verification code");
         }
-
+        
+        // 根据用户名获取用户信息
         SysUsers user = userService.getByUsername(username);
         if (user == null) {
             throw new BadCredentialsException("invalid username or password");
         }
+        
+        String email = user.getEmail();
+        if (email == null || email.isEmpty()) {
+            throw new BadCredentialsException("user email not set");
+        }
+        
+        // 验证验证码
+        boolean codeValid = verifyCode(email, verificationCode);
+        if (!codeValid) {
+            throw new BadCredentialsException("invalid or expired verification code");
+        }
+        
+        // 验证码验证通过后，删除Redis中的验证码
+        deleteVerificationCode(email);
+
+        // 用户信息已经在前面获取过了，不需要重复获取
 
         if (user.getStatus() != null && user.getStatus() != 1) {
             throw new DisabledException("account is disabled");
@@ -95,5 +124,74 @@ public class AuthServiceImpl implements AuthService {
             user.setPassword(null);
         }
         return user;
+    }
+
+    @Override
+    public void sendVerificationCode(String email) {
+        // 生成6位随机验证码
+        String code = String.format("%06d", new Random().nextInt(999999));
+        // 存储到Redis，有效期1分钟
+        String key = "verification:code:" + email;
+        redisTemplate.opsForValue().set(key, code, 1, TimeUnit.MINUTES);
+        // 调用邮件服务发送验证码
+        try {
+            emailService.sendVerificationCode(email, code);
+            System.out.println("验证码已发送到邮箱：" + email + "，验证码：" + code);
+        } catch (Exception e) {
+            System.err.println("发送邮件失败：" + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("发送验证码失败", e);
+        }
+    }
+
+    @Override
+    public boolean verifyCode(String email, String code) {
+        String key = "verification:code:" + email;
+        String storedCode = redisTemplate.opsForValue().get(key);
+        return code != null && code.equals(storedCode);
+    }
+    
+    @Override
+    public void deleteVerificationCode(String email) {
+        String key = "verification:code:" + email;
+        redisTemplate.delete(key);
+    }
+    
+    @Override
+    public String getMaskedEmail(String username) {
+        // 根据用户名获取用户信息
+        SysUsers user = userService.getByUsername(username);
+        if (user == null) {
+            return null;
+        }
+        
+        String email = user.getEmail();
+        if (email == null || email.isEmpty()) {
+            return null;
+        }
+        
+        // 对邮箱进行打码处理
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 2) {
+            // 邮箱前缀太短，全部打码
+            return "****" + email.substring(atIndex);
+        }
+        
+        // 保留前两位和后两位，中间打码
+        String prefix = email.substring(0, 2);
+        String suffix = email.substring(atIndex - 2, atIndex);
+        String domain = email.substring(atIndex);
+        return prefix + "****" + suffix + domain;
+    }
+    
+    @Override
+    public String getEmailByUsername(String username) {
+        // 根据用户名获取用户信息
+        SysUsers user = userService.getByUsername(username);
+        if (user == null) {
+            return null;
+        }
+        
+        return user.getEmail();
     }
 }
