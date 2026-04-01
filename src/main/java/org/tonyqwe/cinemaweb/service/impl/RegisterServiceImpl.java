@@ -10,6 +10,7 @@ import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
 import org.tonyqwe.cinemaweb.mapper.UserRoleMapper;
 import org.tonyqwe.cinemaweb.service.AuthService;
 import org.tonyqwe.cinemaweb.service.RegisterService;
+import org.tonyqwe.cinemaweb.service.TokenService;
 import org.tonyqwe.cinemaweb.service.UserService;
 
 import java.util.Date;
@@ -28,10 +29,13 @@ public class RegisterServiceImpl implements RegisterService {
 
     @Resource
     private AuthService authService;
+    
+    @Resource
+    private TokenService tokenService;
 
     @Override
     @Transactional
-    public void register(RegisterRequest request) {
+    public String register(RegisterRequest request) {
         // 验证验证码
         boolean codeValid = authService.verifyCode(request.getEmail(), request.getVerificationCode());
         if (!codeValid) {
@@ -65,5 +69,10 @@ public class RegisterServiceImpl implements RegisterService {
         userRole.setUserId(user.getId());
         userRole.setRoleId(4);
         userRoleMapper.insert(userRole);
+        
+        // 生成token并缓存
+        String token = tokenService.generateToken(request.getUsername());
+        tokenService.cacheToken(request.getUsername(), token);
+        return token;
     }
 }

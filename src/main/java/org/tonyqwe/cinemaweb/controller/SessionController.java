@@ -47,10 +47,10 @@ public class SessionController {
      * POST /api/sessions/register
      */
     @PostMapping("/sessions/register")
-    public ResponseEntity<ResponseResult<Void>> register(@RequestBody @Valid RegisterRequest request) {
-        registerService.register(request);
+    public ResponseEntity<ResponseResult<String>> register(@RequestBody @Valid RegisterRequest request) {
+        String token = registerService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ResponseResult.success("register success", null));
+                .body(ResponseResult.success("register success", token));
     }
 
     /**
@@ -78,6 +78,36 @@ public class SessionController {
         }
         authService.sendVerificationCode(email);
         return ResponseEntity.ok(ResponseResult.success("验证码已发送", null));
+    }
+    
+    /**
+     * 获取打码邮箱
+     * GET /api/sessions/masked-email
+     */
+    @GetMapping("/sessions/masked-email")
+    public ResponseEntity<ResponseResult<String>> getMaskedEmail(@RequestParam String username) {
+        System.out.println("获取打码邮箱请求：用户名 = " + username);
+        String maskedEmail = authService.getMaskedEmail(username);
+        System.out.println("获取打码邮箱结果：邮箱 = " + maskedEmail);
+        if (maskedEmail == null) {
+            return ResponseEntity.ok(ResponseResult.success(null));
+        }
+        return ResponseEntity.ok(ResponseResult.success(maskedEmail));
+    }
+    
+    /**
+     * 根据用户名获取邮箱
+     * GET /api/sessions/email
+     */
+    @GetMapping("/sessions/email")
+    public ResponseEntity<ResponseResult<String>> getEmailByUsername(@RequestParam String username) {
+        System.out.println("获取邮箱请求：用户名 = " + username);
+        String email = authService.getEmailByUsername(username);
+        System.out.println("获取邮箱结果：邮箱 = " + email);
+        if (email == null) {
+            return ResponseEntity.ok(ResponseResult.error(404, "用户不存在或邮箱未设置"));
+        }
+        return ResponseEntity.ok(ResponseResult.success(email));
     }
 
     /**

@@ -19,4 +19,8 @@ public interface AuthService {
     boolean verifyCode(String email, String code);
     
     void deleteVerificationCode(String email);
+    
+    String getMaskedEmail(String username);
+    
+    String getEmailByUsername(String username);
 }
