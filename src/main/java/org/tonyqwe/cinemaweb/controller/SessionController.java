@@ -67,6 +67,20 @@ public class SessionController {
     }
 
     /**
+     * 发送验证码
+     * POST /api/sessions/verification-code
+     */
+    @PostMapping("/sessions/verification-code")
+    public ResponseEntity<ResponseResult<Void>> sendVerificationCode(@RequestBody String email) {
+        // 去除可能的引号
+        if (email != null && (email.startsWith("\"") || email.startsWith("'"))) {
+            email = email.substring(1, email.length() - 1);
+        }
+        authService.sendVerificationCode(email);
+        return ResponseEntity.ok(ResponseResult.success("验证码已发送", null));
+    }
+
+    /**
      * 当前会话信息（给前端路由守卫用）
      * GET /api/sessions/current
      */

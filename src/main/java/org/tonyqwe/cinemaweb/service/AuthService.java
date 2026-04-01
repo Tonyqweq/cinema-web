@@ -13,4 +13,10 @@ public interface AuthService {
     void logout(String token);
 
     SysUsers getCurrentUser(String token);
+
+    void sendVerificationCode(String email);
+    
+    boolean verifyCode(String email, String code);
+    
+    void deleteVerificationCode(String email);
 }

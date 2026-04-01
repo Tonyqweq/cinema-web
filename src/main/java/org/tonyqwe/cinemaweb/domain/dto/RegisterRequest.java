@@ -14,5 +14,9 @@ public class RegisterRequest {
     @Size(min = 6, message = "密码长度至少 6 位")
     private String password;
 
-    private String email;  // 可选
+    @NotBlank(message = "邮箱不能为空")
+    private String email;
+
+    @NotBlank(message = "验证码不能为空")
+    private String verificationCode;
 }

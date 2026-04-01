@@ -8,6 +8,7 @@ import org.tonyqwe.cinemaweb.domain.dto.RegisterRequest;
 import org.tonyqwe.cinemaweb.domain.entity.SysUserRole;
 import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
 import org.tonyqwe.cinemaweb.mapper.UserRoleMapper;
+import org.tonyqwe.cinemaweb.service.AuthService;
 import org.tonyqwe.cinemaweb.service.RegisterService;
 import org.tonyqwe.cinemaweb.service.UserService;
 
@@ -25,9 +26,21 @@ public class RegisterServiceImpl implements RegisterService {
     @Resource
     private UserRoleMapper userRoleMapper;
 
+    @Resource
+    private AuthService authService;
+
     @Override
     @Transactional
     public void register(RegisterRequest request) {
+        // 验证验证码
+        boolean codeValid = authService.verifyCode(request.getEmail(), request.getVerificationCode());
+        if (!codeValid) {
+            throw new IllegalArgumentException("验证码无效或已过期");
+        }
+        
+        // 验证码验证通过后，删除Redis中的验证码
+        authService.deleteVerificationCode(request.getEmail());
+
         SysUsers existUser = userService.getByUsername(request.getUsername());
         if (existUser != null) {
             throw new IllegalArgumentException("用户名已存在");
