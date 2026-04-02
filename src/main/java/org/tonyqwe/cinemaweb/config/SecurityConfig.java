@@ -51,7 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/orders/**")
                         .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
                                 appProperties.getSecurity().getOrderApiRoles()))
-                        .requestMatchers("/api/users/**")
+                        .requestMatchers("/api/users/**", "/admin/users/**", "/api/admin/users/**")
                         .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
                                 appProperties.getSecurity().getUserApiRoles()))
                         .requestMatchers("/api/settings/**")
