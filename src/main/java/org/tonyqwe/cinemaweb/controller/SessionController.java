@@ -86,9 +86,9 @@ public class SessionController {
      */
     @GetMapping("/sessions/masked-email")
     public ResponseEntity<ResponseResult<String>> getMaskedEmail(@RequestParam String username) {
-        System.out.println("获取打码邮箱请求：用户名 = " + username);
+        //System.out.println("获取打码邮箱请求：用户名 = " + username);
         String maskedEmail = authService.getMaskedEmail(username);
-        System.out.println("获取打码邮箱结果：邮箱 = " + maskedEmail);
+        //System.out.println("获取打码邮箱结果：邮箱 = " + maskedEmail);
         if (maskedEmail == null) {
             return ResponseEntity.ok(ResponseResult.success(null));
         }
@@ -101,9 +101,9 @@ public class SessionController {
      */
     @GetMapping("/sessions/email")
     public ResponseEntity<ResponseResult<String>> getEmailByUsername(@RequestParam String username) {
-        System.out.println("获取邮箱请求：用户名 = " + username);
+        //System.out.println("获取邮箱请求：用户名 = " + username);
         String email = authService.getEmailByUsername(username);
-        System.out.println("获取邮箱结果：邮箱 = " + email);
+        //System.out.println("获取邮箱结果：邮箱 = " + email);
         if (email == null) {
             return ResponseEntity.ok(ResponseResult.error(404, "用户不存在或邮箱未设置"));
         }
