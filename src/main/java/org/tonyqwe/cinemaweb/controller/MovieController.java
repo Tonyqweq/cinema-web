@@ -11,10 +11,18 @@ import org.tonyqwe.cinemaweb.domain.dto.MovieImportResult;
 import org.tonyqwe.cinemaweb.domain.dto.MoviePageResponse;
 import org.tonyqwe.cinemaweb.domain.dto.UpdateMovieStatusRequest;
 import org.tonyqwe.cinemaweb.domain.entity.Movies;
+import org.tonyqwe.cinemaweb.domain.vo.MovieVO;
 import org.tonyqwe.cinemaweb.service.MovieService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/movies")
@@ -38,7 +46,8 @@ public class MovieController {
             @RequestParam(required = false) String sortOrder
     ) {
         IPage<Movies> result = movieService.pageMovies(page, pageSize, title, language, country, sortBy, sortOrder);
-        MoviePageResponse response = new MoviePageResponse(result.getTotal(), result.getRecords());
+        List<MovieVO> movieVOs = result.getRecords().stream().map(this::convertToVO).collect(Collectors.toList());
+        MoviePageResponse response = new MoviePageResponse(result.getTotal(), movieVOs);
         return ResponseEntity.ok(ResponseResult.success(response));
     }
 
@@ -59,9 +68,9 @@ public class MovieController {
      * POST /api/movies
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseResult<Movies>> create(@RequestBody @Valid MovieBodyRequest request) {
+    public ResponseEntity<ResponseResult<MovieVO>> create(@RequestBody @Valid MovieBodyRequest request) {
         Movies created = movieService.createMovie(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseResult.success(created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseResult.success(convertToVO(created)));
     }
 
     /**
@@ -81,13 +90,13 @@ public class MovieController {
      * GET /api/movies/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseResult<Movies>> detail(@PathVariable("id") Long id) {
+    public ResponseEntity<ResponseResult<MovieVO>> detail(@PathVariable("id") Long id) {
         Movies movie = movieService.getMovieById(id);
         if (movie == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseResult.error(404, "movie not found"));
         }
-        return ResponseEntity.ok(ResponseResult.success(movie));
+        return ResponseEntity.ok(ResponseResult.success(convertToVO(movie)));
     }
 
     /**
@@ -95,7 +104,7 @@ public class MovieController {
      * PUT /api/movies/{id}
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseResult<Movies>> updateInfo(
+    public ResponseEntity<ResponseResult<MovieVO>> updateInfo(
             @PathVariable("id") Long id,
             @RequestBody @Valid MovieBodyRequest request
     ) {
@@ -104,7 +113,7 @@ public class MovieController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseResult.error(404, "movie not found"));
         }
-        return ResponseEntity.ok(ResponseResult.success(updated));
+        return ResponseEntity.ok(ResponseResult.success(convertToVO(updated)));
     }
 
     /**
@@ -112,7 +121,7 @@ public class MovieController {
      * PUT /api/movies/{id}/status
      */
     @PutMapping("/{id}/status")
-    public ResponseEntity<ResponseResult<Movies>> updateStatus(
+    public ResponseEntity<ResponseResult<MovieVO>> updateStatus(
             @PathVariable("id") Long id,
             @RequestBody @Valid UpdateMovieStatusRequest request
     ) {
@@ -121,7 +130,7 @@ public class MovieController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ResponseResult.error(404, "movie not found"));
         }
-        return ResponseEntity.ok(ResponseResult.success(updated));
+        return ResponseEntity.ok(ResponseResult.success(convertToVO(updated)));
     }
 
     /**
@@ -136,5 +145,23 @@ public class MovieController {
                     .body(ResponseResult.error(404, "movie not found"));
         }
         return ResponseEntity.ok(ResponseResult.success("deleted", null));
+    }
+
+    private MovieVO convertToVO(Movies movie) {
+        MovieVO vo = new MovieVO();
+        vo.setId(movie.getId());
+        vo.setTitle(movie.getTitle());
+        vo.setOriginalTitle(movie.getOriginalTitle());
+        vo.setLanguage(movie.getLanguage());
+        vo.setCountry(movie.getCountry());
+        vo.setDurationMin(movie.getDurationMin());
+        vo.setReleaseDate(movie.getReleaseDate());
+        vo.setDescription(movie.getDescription());
+        vo.setPosterUrl(movie.getPosterUrl());
+        vo.setTrailerUrl(movie.getTrailerUrl());
+        vo.setStatus(movie.getStatus());
+        vo.setCreatedAt(movie.getCreatedAt());
+        vo.setUpdatedAt(movie.getUpdatedAt());
+        return vo;
     }
 }
