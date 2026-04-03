@@ -18,7 +18,7 @@ public class JwtUtil {
     private static final SecretKey KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
 
     // 过期时间：1 小时
-    private static final long EXPIRATION = 60 * 60 * 1000L;
+    private static final long EXPIRATION = 60 * 60 * 1000L * 10;
 
     public static String generateToken(String username) {
         Date now = new Date();
