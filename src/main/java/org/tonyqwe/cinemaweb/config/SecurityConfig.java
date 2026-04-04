@@ -44,6 +44,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/cinemas/**")
                         .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
                                 appProperties.getSecurity().getCinemaApiRoles()))
+                        //影厅模块
+                        .requestMatchers("/api/halls/**")
+                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
+                                appProperties.getSecurity().getCinemaApiRoles()))
                         // 影片模块：仅允许配置的角色访问（与 app.security.movie-api-roles / sys_roles.name 一致）
                         .requestMatchers("/api/movies/**")
                         .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
