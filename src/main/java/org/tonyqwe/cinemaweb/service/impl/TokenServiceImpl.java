@@ -79,7 +79,19 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public boolean validate(String username, String token) {
-        String cached = getCachedToken(username);
-        return cached != null && cached.equals(token);
+        try {
+            // 尝试从Redis获取缓存的token
+            String cached = getCachedToken(username);
+            if (cached != null && cached.equals(token)) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Redis连接异常时，仍然尝试验证JWT本身的有效性
+            System.err.println("Redis连接异常，尝试验证JWT本身: " + e.getMessage());
+        }
+        
+        // 验证JWT本身的有效性
+        String parsedUsername = parseUsername(token);
+        return parsedUsername != null && parsedUsername.equals(username);
     }
 }
