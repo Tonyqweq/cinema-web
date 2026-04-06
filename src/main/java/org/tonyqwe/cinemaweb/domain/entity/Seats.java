@@ -7,12 +7,12 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 @Data
 @TableName("seats")
 public class Seats {
+
     @TableId(type = IdType.AUTO)
     private Long id; // 座位ID（主键）
 
@@ -28,7 +28,7 @@ public class Seats {
 
     private Integer status; // 座位状态：1=可选，2=已售，3=已锁定，4=维修中
 
-    private BigDecimal price; // 座位价格（可选，如果影厅统一价格则为NULL）
+    private java.math.BigDecimal price; // 座位价格（可选，如果影厅统一价格则为null）
 
     @JsonProperty("created_at")
     @TableField("created_at")

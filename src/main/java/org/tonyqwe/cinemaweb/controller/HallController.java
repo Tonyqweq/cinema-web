@@ -5,6 +5,7 @@ import jakarta.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.dto.HallDTO;
+import org.tonyqwe.cinemaweb.domain.dto.HallPageResponse;
 import org.tonyqwe.cinemaweb.domain.entity.Cinemas;
 import org.tonyqwe.cinemaweb.domain.entity.Halls;
 import org.tonyqwe.cinemaweb.domain.vo.HallVO;
@@ -30,13 +31,14 @@ public class HallController {
      * GET /api/halls?cinemaId=1&page=1&pageSize=10
      */
     @GetMapping
-    public ResponseEntity<ResponseResult<List<HallVO>>> pageHalls(
+    public ResponseEntity<ResponseResult<HallPageResponse>> pageHalls(
             @RequestParam(required = false) Long cinemaId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
         IPage<Halls> hallsPage = hallService.pageHalls(cinemaId, page, pageSize);
         List<HallVO> hallVOs = hallsPage.getRecords().stream().map(this::toHallVO).collect(Collectors.toList());
-        return ResponseEntity.ok(ResponseResult.success(hallVOs, hallsPage.getTotal()));
+        HallPageResponse response = new HallPageResponse(hallsPage.getTotal(), hallVOs);
+        return ResponseEntity.ok(ResponseResult.success(response));
     }
 
     /**
@@ -60,7 +62,7 @@ public class HallController {
     public ResponseEntity<ResponseResult<Void>> addHall(@RequestBody HallDTO hallDTO) {
         boolean success = hallService.saveHall(hallDTO);
         if (success) {
-            return ResponseEntity.ok(ResponseResult.success("添加成功"));
+            return ResponseEntity.ok(ResponseResult.success());
         } else {
             return ResponseEntity.ok(ResponseResult.error("添加失败"));
         }
@@ -74,7 +76,7 @@ public class HallController {
     public ResponseEntity<ResponseResult<Void>> updateHall(@PathVariable Long id, @RequestBody HallDTO hallDTO) {
         boolean success = hallService.updateHall(id, hallDTO);
         if (success) {
-            return ResponseEntity.ok(ResponseResult.success("修改成功"));
+            return ResponseEntity.ok(ResponseResult.success());
         } else {
             return ResponseEntity.ok(ResponseResult.error("修改失败"));
         }
@@ -88,7 +90,7 @@ public class HallController {
     public ResponseEntity<ResponseResult<Void>> deleteHall(@PathVariable Long id) {
         boolean success = hallService.deleteHall(id);
         if (success) {
-            return ResponseEntity.ok(ResponseResult.success("删除成功"));
+            return ResponseEntity.ok(ResponseResult.success());
         } else {
             return ResponseEntity.ok(ResponseResult.error("删除失败"));
         }
@@ -102,7 +104,7 @@ public class HallController {
         vo.setId(hall.getId());
         vo.setCinemaId(hall.getCinemaId());
         // 获取影院名称
-        Cinemas cinema = cinemaService.getById(hall.getCinemaId());
+        Cinemas cinema = cinemaService.getCinemaById(hall.getCinemaId());
         if (cinema != null) {
             vo.setCinemaName(cinema.getName());
         }
