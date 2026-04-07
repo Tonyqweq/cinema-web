@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.tonyqwe.cinemaweb.domain.dto.MovieBodyRequest;
 import org.tonyqwe.cinemaweb.domain.dto.MovieImportResult;
 import org.tonyqwe.cinemaweb.domain.dto.MoviePageResponse;
@@ -13,15 +14,15 @@ import org.tonyqwe.cinemaweb.domain.dto.UpdateMovieStatusRequest;
 import org.tonyqwe.cinemaweb.domain.entity.Movies;
 import org.tonyqwe.cinemaweb.domain.vo.MovieVO;
 import org.tonyqwe.cinemaweb.service.MovieService;
+import org.tonyqwe.cinemaweb.service.CinemaMovieRelationService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,6 +31,9 @@ public class MovieController {
 
     @Resource
     private MovieService movieService;
+
+    @Resource
+    private CinemaMovieRelationService cinemaMovieRelationService;
 
     /**
      * 分页查询电影列表
@@ -56,8 +60,8 @@ public class MovieController {
      * GET /api/movies/filters
      */
     @GetMapping("/filters")
-    public ResponseEntity<ResponseResult<java.util.Map<String, Object>>> filters() {
-        java.util.Map<String, Object> map = new java.util.HashMap<>();
+    public ResponseEntity<ResponseResult<Map<String, Object>>> filters() {
+        Map<String, Object> map = new HashMap<>();
         map.put("languages", movieService.listLanguages());
         map.put("countries", movieService.listCountries());
         return ResponseEntity.ok(ResponseResult.success(map));
@@ -79,8 +83,8 @@ public class MovieController {
      */
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseResult<MovieImportResult>> importExcel(
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
-    ) throws java.io.IOException {
+            @RequestParam("file") MultipartFile file
+    ) throws IOException {
         MovieImportResult result = movieService.importMoviesFromExcel(file);
         return ResponseEntity.ok(ResponseResult.success(result));
     }
@@ -125,6 +129,15 @@ public class MovieController {
             @PathVariable("id") Long id,
             @RequestBody @Valid UpdateMovieStatusRequest request
     ) {
+        // 检查电影是否已被绑定到影院，如果是，则不允许下架
+        if (request.getStatus() == 0) {
+            List<Long> cinemaIds = cinemaMovieRelationService.getCinemaIdsByMovieId(id);
+            if (cinemaIds != null && !cinemaIds.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ResponseResult.error(400, "该电影已绑定到影院，无法下架"));
+            }
+        }
+        
         Movies updated = movieService.updateMovieStatus(id, request.getStatus());
         if (updated == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -139,6 +152,13 @@ public class MovieController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> delete(@PathVariable("id") Long id) {
+        // 检查电影是否已被绑定到影院，如果是，则不允许删除
+        List<Long> cinemaIds = cinemaMovieRelationService.getCinemaIdsByMovieId(id);
+        if (cinemaIds != null && !cinemaIds.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseResult.error(400, "该电影已绑定到影院，无法删除"));
+        }
+        
         boolean ok = movieService.deleteMovie(id);
         if (!ok) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

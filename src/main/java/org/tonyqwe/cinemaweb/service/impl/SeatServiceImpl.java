@@ -132,6 +132,11 @@ public class SeatServiceImpl implements SeatService {
         return success;
     }
 
+    @Override
+    public Seats getSeatById(Long id) {
+        return seatMapper.selectById(id);
+    }
+
     private SeatVO toSeatVO(Seats seat) {
         SeatVO vo = new SeatVO();
         vo.setId(seat.getId());
