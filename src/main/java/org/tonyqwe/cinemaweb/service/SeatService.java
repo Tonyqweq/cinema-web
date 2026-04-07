@@ -42,4 +42,9 @@ public interface SeatService {
      * 生成影厅座位
      */
     boolean generateSeats(Long hallId, int rows, int columns);
+
+    /**
+     * 根据ID获取座位
+     */
+    Seats getSeatById(Long id);
 }

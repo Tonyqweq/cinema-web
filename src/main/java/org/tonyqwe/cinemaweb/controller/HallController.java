@@ -9,9 +9,12 @@ import org.tonyqwe.cinemaweb.domain.dto.HallPageResponse;
 import org.tonyqwe.cinemaweb.domain.entity.Cinemas;
 import org.tonyqwe.cinemaweb.domain.entity.Halls;
 import org.tonyqwe.cinemaweb.domain.vo.HallVO;
+import org.tonyqwe.cinemaweb.service.AdminCinemaRelationService;
 import org.tonyqwe.cinemaweb.service.CinemaService;
 import org.tonyqwe.cinemaweb.service.HallService;
+import org.tonyqwe.cinemaweb.service.UserService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
+import org.tonyqwe.cinemaweb.utils.SecurityUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +29,12 @@ public class HallController {
     @Resource
     private CinemaService cinemaService;
 
+    @Resource
+    private UserService userService;
+
+    @Resource
+    private AdminCinemaRelationService adminCinemaRelationService;
+
     /**
      * 分页查询影厅列表
      * GET /api/halls?cinemaId=1&page=1&pageSize=10
@@ -35,6 +44,30 @@ public class HallController {
             @RequestParam(required = false) Long cinemaId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
+        // 检查权限
+        if (SecurityUtils.isAdmin()) {
+            // ADMIN角色只能查看绑定影院的影厅
+            String username = SecurityUtils.getCurrentUsername();
+            if (username != null) {
+                var user = userService.getByUsername(username);
+                if (user != null) {
+                    Long boundCinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
+                    if (boundCinemaId != null) {
+                        // 只能查询绑定影院的影厅
+                        if (cinemaId != null && !cinemaId.equals(boundCinemaId)) {
+                            HallPageResponse response = new HallPageResponse(0L, List.of());
+                            return ResponseEntity.ok(ResponseResult.success(response));
+                        }
+                        cinemaId = boundCinemaId;
+                    } else {
+                        // 没有绑定影院，返回空结果
+                        HallPageResponse response = new HallPageResponse(0L, List.of());
+                        return ResponseEntity.ok(ResponseResult.success(response));
+                    }
+                }
+            }
+        }
+        
         IPage<Halls> hallsPage = hallService.pageHalls(cinemaId, page, pageSize);
         List<HallVO> hallVOs = hallsPage.getRecords().stream().map(this::toHallVO).collect(Collectors.toList());
         HallPageResponse response = new HallPageResponse(hallsPage.getTotal(), hallVOs);
@@ -51,6 +84,22 @@ public class HallController {
         if (hall == null) {
             return ResponseEntity.ok(ResponseResult.error("影厅不存在"));
         }
+        
+        // 检查权限
+        if (SecurityUtils.isAdmin()) {
+            // ADMIN角色只能查看绑定影院的影厅
+            String username = SecurityUtils.getCurrentUsername();
+            if (username != null) {
+                var user = userService.getByUsername(username);
+                if (user != null) {
+                    Long boundCinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
+                    if (boundCinemaId == null || !boundCinemaId.equals(hall.getCinemaId())) {
+                        return ResponseEntity.ok(ResponseResult.error("无权访问该影厅"));
+                    }
+                }
+            }
+        }
+        
         return ResponseEntity.ok(ResponseResult.success(toHallVO(hall)));
     }
 
@@ -60,6 +109,21 @@ public class HallController {
      */
     @PostMapping
     public ResponseEntity<ResponseResult<Void>> addHall(@RequestBody HallDTO hallDTO) {
+        // 检查权限
+        if (SecurityUtils.isAdmin()) {
+            // ADMIN角色只能添加绑定影院的影厅
+            String username = SecurityUtils.getCurrentUsername();
+            if (username != null) {
+                var user = userService.getByUsername(username);
+                if (user != null) {
+                    Long boundCinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
+                    if (boundCinemaId == null || !boundCinemaId.equals(hallDTO.getCinemaId())) {
+                        return ResponseEntity.ok(ResponseResult.error("无权添加该影院的影厅"));
+                    }
+                }
+            }
+        }
+        
         boolean success = hallService.saveHall(hallDTO);
         if (success) {
             return ResponseEntity.ok(ResponseResult.success());
@@ -74,6 +138,29 @@ public class HallController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> updateHall(@PathVariable Long id, @RequestBody HallDTO hallDTO) {
+        // 检查权限
+        if (SecurityUtils.isAdmin()) {
+            // ADMIN角色只能修改绑定影院的影厅
+            String username = SecurityUtils.getCurrentUsername();
+            if (username != null) {
+                var user = userService.getByUsername(username);
+                if (user != null) {
+                    Long boundCinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
+                    if (boundCinemaId != null) {
+                        // 检查影厅是否属于绑定的影院
+                        Halls hall = hallService.getById(id);
+                        if (hall == null || !boundCinemaId.equals(hall.getCinemaId())) {
+                            return ResponseEntity.ok(ResponseResult.error("无权修改该影厅"));
+                        }
+                        // 检查是否修改了影院ID
+                        if (!boundCinemaId.equals(hallDTO.getCinemaId())) {
+                            return ResponseEntity.ok(ResponseResult.error("无权修改影厅所属影院"));
+                        }
+                    }
+                }
+            }
+        }
+        
         boolean success = hallService.updateHall(id, hallDTO);
         if (success) {
             return ResponseEntity.ok(ResponseResult.success());
@@ -88,6 +175,25 @@ public class HallController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> deleteHall(@PathVariable Long id) {
+        // 检查权限
+        if (SecurityUtils.isAdmin()) {
+            // ADMIN角色只能删除绑定影院的影厅
+            String username = SecurityUtils.getCurrentUsername();
+            if (username != null) {
+                var user = userService.getByUsername(username);
+                if (user != null) {
+                    Long boundCinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
+                    if (boundCinemaId != null) {
+                        // 检查影厅是否属于绑定的影院
+                        Halls hall = hallService.getById(id);
+                        if (hall == null || !boundCinemaId.equals(hall.getCinemaId())) {
+                            return ResponseEntity.ok(ResponseResult.error("无权删除该影厅"));
+                        }
+                    }
+                }
+            }
+        }
+        
         boolean success = hallService.deleteHall(id);
         if (success) {
             return ResponseEntity.ok(ResponseResult.success());
