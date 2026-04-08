@@ -107,13 +107,13 @@ public class CinemaMovieController {
      * 检查用户是否有权限访问指定影院
      */
     private boolean checkCinemaAccess(Long cinemaId) {
-        // SUPER_ADMIN可以访问所有影院
-        if (SecurityUtils.isSuperAdmin()) {
+        // SUPER_ADMIN和ADMIN可以访问所有影院
+        if (SecurityUtils.isSuperAdmin()||SecurityUtils.isAdmin()) {
             return true;
         }
 
-        // ADMIN只能访问其绑定的影院
-        if (SecurityUtils.isAdmin()) {
+        // STAFF只能访问其绑定的影院
+        if (SecurityUtils.isStaff()) {
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 // 这里需要通过userService获取用户信息，然后获取其绑定的影院ID

@@ -21,6 +21,9 @@ public class AdminCinemaRelationServiceImpl extends ServiceImpl<AdminCinemaRelat
 
     @Override
     public Long getCinemaIdByAdminId(Integer adminId) {
+        if (adminId == null) {
+            return null;
+        }
         AdminCinemaRelation relation = baseMapper.selectOne(new LambdaQueryWrapper<AdminCinemaRelation>()
                 .eq(AdminCinemaRelation::getAdminId, adminId));
         return relation != null ? relation.getCinemaId() : null;
@@ -40,6 +43,9 @@ public class AdminCinemaRelationServiceImpl extends ServiceImpl<AdminCinemaRelat
 
     @Override
     public List<Integer> getAdminIdsByCinemaId(Long cinemaId) {
+        if (cinemaId == null) {
+            return List.of();
+        }
         List<AdminCinemaRelation> relations = baseMapper.selectList(new LambdaQueryWrapper<AdminCinemaRelation>()
                 .eq(AdminCinemaRelation::getCinemaId, cinemaId));
         return relations.stream()
@@ -73,5 +79,31 @@ public class AdminCinemaRelationServiceImpl extends ServiceImpl<AdminCinemaRelat
         }
         baseMapper.delete(new LambdaQueryWrapper<AdminCinemaRelation>()
                 .eq(AdminCinemaRelation::getAdminId, adminId));
+    }
+
+    /**
+     * 检查用户是否有权限访问指定影院
+     * @param username 用户名
+     * @param cinemaId 影院ID
+     * @return true if user has permission, false otherwise
+     */
+    public boolean checkUserCinemaPermission(String username, Long cinemaId) {
+        if (username == null || cinemaId == null) {
+            return false;
+        }
+        
+        var user = userService.getByUsername(username);
+        if (user == null) {
+            return false;
+        }
+        
+        // 检查用户是否为SUPER_ADMIN或ADMIN
+        if (userService.isSuperAdmin(username) || userService.isAdmin(username)) {
+            return true;
+        }
+        
+        // 对于STAFF角色，检查是否绑定到指定影院
+        Long boundCinemaId = getCinemaIdByAdminId(user.getId());
+        return boundCinemaId != null && boundCinemaId.equals(cinemaId);
     }
 }
