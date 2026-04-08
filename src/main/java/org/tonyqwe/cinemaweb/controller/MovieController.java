@@ -167,6 +167,22 @@ public class MovieController {
         return ResponseEntity.ok(ResponseResult.success("deleted", null));
     }
 
+    /**
+     * 根据影院ID获取绑定的电影列表
+     * GET /api/movies/cinema/{cinemaId}
+     */
+    @GetMapping("/cinema/{cinemaId}")
+    public ResponseEntity<ResponseResult<List<MovieVO>>> getMoviesByCinemaId(@PathVariable("cinemaId") Long cinemaId) {
+        List<Long> movieIds = cinemaMovieRelationService.getMovieIdsByCinemaId(cinemaId);
+        if (movieIds == null || movieIds.isEmpty()) {
+            return ResponseEntity.ok(ResponseResult.success(List.of()));
+        }
+        
+        List<Movies> movies = movieService.getMoviesByIds(movieIds);
+        List<MovieVO> movieVOs = movies.stream().map(this::convertToVO).collect(Collectors.toList());
+        return ResponseEntity.ok(ResponseResult.success(movieVOs));
+    }
+
     private MovieVO convertToVO(Movies movie) {
         MovieVO vo = new MovieVO();
         vo.setId(movie.getId());

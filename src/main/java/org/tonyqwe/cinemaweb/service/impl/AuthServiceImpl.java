@@ -44,10 +44,11 @@ public class AuthServiceImpl implements AuthService {
     public String login(LoginRequest request) {
         String username = request.getUsername();
         String password = request.getPassword();
+        String email = request.getEmail();
         String verificationCode = request.getVerificationCode();
         
-        if (username == null || password == null || verificationCode == null) {
-            throw new BadCredentialsException("invalid username, password or verification code");
+        if (username == null || password == null || email == null || verificationCode == null) {
+            throw new BadCredentialsException("invalid username, password, email or verification code");
         }
         
         // 根据用户名获取用户信息
@@ -56,9 +57,13 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("invalid username or password");
         }
         
-        String email = user.getEmail();
-        if (email == null || email.isEmpty()) {
+        // 验证邮箱是否与用户数据库中的邮箱一致
+        String userEmail = user.getEmail();
+        if (userEmail == null || userEmail.isEmpty()) {
             throw new BadCredentialsException("user email not set");
+        }
+        if (!userEmail.equals(email)) {
+            throw new BadCredentialsException("email does not match user's email");
         }
         
         // 验证验证码

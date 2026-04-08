@@ -108,6 +108,14 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movies> implement
     }
 
     @Override
+    public java.util.List<Movies> getMoviesByIds(java.util.List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return listByIds(ids);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public Movies createMovie(MovieBodyRequest request) {
         Date now = new Date();

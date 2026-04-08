@@ -46,4 +46,11 @@ public class SecurityUtils {
     public static boolean isAdmin() {
         return hasRole("ADMIN");
     }
+
+    /**
+     * 检查当前用户是否是管理员
+     */
+    public static boolean isStaff() {
+        return hasRole("STAFF");
+    }
 }

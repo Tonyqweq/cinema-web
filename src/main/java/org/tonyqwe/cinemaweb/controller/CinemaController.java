@@ -38,8 +38,8 @@ public class CinemaController {
             @RequestParam(required = false) String district
     ) {
         // 检查权限
-        if (SecurityUtils.isAdmin()) {
-            // ADMIN角色只能查看绑定的影院
+        if (SecurityUtils.isStaff()) {
+            // STAFF角色只能查看绑定的影院
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -61,7 +61,7 @@ public class CinemaController {
             }
         }
         
-        // SUPER_ADMIN或其他角色可以查看所有影院
+        // SUPER_ADMIN或ADMIN角色可以查看所有影院
         IPage<Cinemas> result = cinemaService.pageCinemas(page, pageSize, name, province, city, district);
         List<CinemaVO> cinemaVOs = result.getRecords().stream().map(this::convertToVO).collect(Collectors.toList());
         CinemaPageResponse response = new CinemaPageResponse(result.getTotal(), cinemaVOs);
@@ -71,8 +71,8 @@ public class CinemaController {
     @GetMapping("/{id}")
     public ResponseEntity<ResponseResult<CinemaVO>> get(@PathVariable Long id) {
         // 检查权限
-        if (SecurityUtils.isAdmin()) {
-            // ADMIN角色只能查看绑定的影院
+        if (SecurityUtils.isStaff()) {
+            // STAFF角色只能查看绑定的影院
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -95,8 +95,8 @@ public class CinemaController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> update(@PathVariable Long id, @RequestBody Cinemas cinema) {
         // 检查权限
-        if (SecurityUtils.isAdmin()) {
-            // ADMIN角色只能修改绑定的影院
+        if (SecurityUtils.isStaff()) {
+            // STAFF角色只能修改绑定的影院
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -121,8 +121,8 @@ public class CinemaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> delete(@PathVariable Long id) {
         // 检查权限
-        if (SecurityUtils.isAdmin()) {
-            // ADMIN角色只能删除绑定的影院
+        if (SecurityUtils.isStaff()) {
+            // STAFF角色只能删除绑定的影院
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -146,8 +146,8 @@ public class CinemaController {
     @PostMapping
     public ResponseEntity<ResponseResult<Void>> add(@RequestBody Cinemas cinema) {
         // 检查权限
-        if (SecurityUtils.isAdmin()) {
-            // ADMIN角色不能添加影院，只能由SUPER_ADMIN添加
+        if (SecurityUtils.isStaff()) {
+            // STAFF角色不能添加影院，只能由SUPER_ADMIN或ADMIN添加
             return ResponseEntity.ok(ResponseResult.error("无权添加影院"));
         }
         

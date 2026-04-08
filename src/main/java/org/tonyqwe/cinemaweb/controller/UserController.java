@@ -42,7 +42,7 @@ public class UserController {
     /**
      * 获取用户列表
      */
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
     @GetMapping("/list")
     public ResponseResult<?> getUserList(@RequestParam(defaultValue = "1") Integer page,
                                          @RequestParam(defaultValue = "10") Integer limit,
@@ -105,7 +105,7 @@ public class UserController {
     /**
      * 获取所有角色
      */
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
     @GetMapping("/roles")
     public ResponseResult<?> getRoles() {
         List<SysRole> roles = roleService.list();
@@ -118,7 +118,7 @@ public class UserController {
     /**
      * 获取用户角色
      */
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
     @GetMapping("/role/{userId}")
     public ResponseResult<?> getUserRole(@PathVariable Integer userId) {
         List<SysUserRole> userRoles = userRoleService.list(new LambdaQueryWrapper<SysUserRole>()
@@ -219,7 +219,7 @@ public class UserController {
     /**
      * 获取用户绑定的影院ID
      */
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
     @GetMapping("/cinema/{userId}")
     public ResponseResult<?> getUserCinema(@PathVariable Integer userId) {
         Long cinemaId = adminCinemaRelationService.getCinemaIdByAdminId(userId);

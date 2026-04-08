@@ -27,5 +27,7 @@ public interface MovieService extends IService<Movies> {
     MovieImportResult importMoviesFromExcel(MultipartFile file) throws IOException;
 
     boolean deleteMovie(Long id);
+
+    java.util.List<Movies> getMoviesByIds(java.util.List<Long> ids);
 }
 

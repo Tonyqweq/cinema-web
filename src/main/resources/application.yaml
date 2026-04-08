@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   servlet:
@@ -47,32 +47,37 @@ app:
   cors:
     allowed-origins:
       - "http://localhost:5173"
+      - "http://localhost:5175"
   # 与 sys_roles.name 一致；无权限的用户访问对应 API 将返回 403
   security:
     cinema-api-roles:
       - SUPER_ADMIN
       - ADMIN
+      - STAFF
     movie-api-roles:
       - SUPER_ADMIN
       - ADMIN
+      - STAFF
     order-api-roles:
       - SUPER_ADMIN
       - ADMIN
+      - STAFF
     user-api-roles:
       - SUPER_ADMIN
       - ADMIN
     settings-api-roles:
       - SUPER_ADMIN
       - ADMIN
+      - STAFF
 
 
 mybatis-plus:
-  type-aliases-package: com.liu.entity.User # ?????
-  mapper-locations: "classpath:/mapper/**/*.xml" # Mapper.xml?????????mapper??????xml???????
+  type-aliases-package: org.tonyqwe.cinemaweb.domain.entity
+  mapper-locations: classpath:mapper/*.xml
   configuration:
-    map-underscore-to-camel-case: true # ?????????????
-    cache-enabled: false # ????????
+    map-underscore-to-camel-case: true
+    cache-enabled: false
   global-config:
     db-config:
-      id-type: assign_id # id???????
-      update-strategy: not_null # ????????????
+      id-type: auto
+      update-strategy: not_null
