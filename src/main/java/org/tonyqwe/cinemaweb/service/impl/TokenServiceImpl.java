@@ -25,7 +25,7 @@ public class TokenServiceImpl implements TokenService {
     private AppProperties appProperties;
 
     @Override
-    public String generateToken(String username) {
+    public String generateToken(String username, Long userId) {
         String secret = appProperties.getJwt().getSecret();
         int expSeconds = appProperties.getJwt().getExpirationSeconds();
 
@@ -35,10 +35,28 @@ public class TokenServiceImpl implements TokenService {
 
         return Jwts.builder()
                 .subject(username)
+                .claim("userId", userId)
                 .issuedAt(now)
                 .expiration(expire)
                 .signWith(key)
                 .compact();
+    }
+
+    @Override
+    public Long getUserIdFromToken(String token) {
+        if (token == null || token.isEmpty()) return null;
+        try {
+            String secret = appProperties.getJwt().getSecret();
+            SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return claims.get("userId", Long.class);
+        } catch (JwtException | IllegalArgumentException e) {
+            return null;
+        }
     }
 
     @Override

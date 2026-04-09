@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.entity.SysRole;
 import org.tonyqwe.cinemaweb.domain.entity.SysUserRole;
 import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
+import org.tonyqwe.cinemaweb.domain.dto.ChangePasswordRequest;
+import org.tonyqwe.cinemaweb.domain.dto.ChangePhoneRequest;
+import org.tonyqwe.cinemaweb.domain.dto.ChangeEmailRequest;
 import org.tonyqwe.cinemaweb.domain.vo.RoleVO;
 import org.tonyqwe.cinemaweb.domain.vo.UserListVO;
 import org.tonyqwe.cinemaweb.domain.vo.UserVO;
@@ -264,5 +267,32 @@ public class UserController {
         } catch (Exception e) {
             return ResponseResult.error("Failed to update user cinema binding: " + e.getMessage());
         }
+    }
+
+    /**
+     * 修改密码
+     */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
+    @PutMapping("/password")
+    public ResponseResult<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        return userService.changePassword(request.getOldPassword(), request.getNewPassword());
+    }
+
+    /**
+     * 修改手机号
+     */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
+    @PutMapping("/phone")
+    public ResponseResult<?> changePhone(@RequestBody ChangePhoneRequest request) {
+        return userService.changePhone(request.getPhone(), request.getVerificationCode());
+    }
+
+    /**
+     * 修改邮箱
+     */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
+    @PutMapping("/email")
+    public ResponseResult<?> changeEmail(@RequestBody ChangeEmailRequest request) {
+        return userService.changeEmail(request.getEmail(), request.getVerificationCode());
     }
 }

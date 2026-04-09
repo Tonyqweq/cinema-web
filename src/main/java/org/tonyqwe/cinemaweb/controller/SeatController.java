@@ -74,6 +74,16 @@ public class SeatController {
     }
 
     /**
+     * 根据场次ID获取座位列表（考虑场次的座位锁定状态）
+     * GET /api/seats/showtime?showtimeId=1
+     */
+    @GetMapping("/showtime")
+    public ResponseEntity<ResponseResult<List<SeatVO>>> getSeatsByShowtimeId(@RequestParam Long showtimeId) {
+        List<SeatVO> seats = seatService.getSeatsByShowtimeId(showtimeId);
+        return ResponseEntity.ok(ResponseResult.success(seats));
+    }
+
+    /**
      * 保存座位
      * POST /api/seats
      */

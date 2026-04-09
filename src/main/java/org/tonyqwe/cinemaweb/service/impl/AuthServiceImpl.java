@@ -102,7 +102,8 @@ public class AuthServiceImpl implements AuthService {
             return cached;
         }
 
-        String token = tokenService.generateToken(username);
+        String token = tokenService.generateToken(username, Long.valueOf(user.getId()));
+
         tokenService.cacheToken(username, token);
         return token;
     }

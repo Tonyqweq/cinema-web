@@ -5,7 +5,13 @@ package org.tonyqwe.cinemaweb.service;
  */
 public interface TokenService {
 
-    String generateToken(String username);
+    /**
+     * 生成token
+     * @param username 用户名
+     * @param userId 用户ID
+     * @return token
+     */
+    String generateToken(String username, Long userId);
 
     String parseUsername(String token);
 
@@ -16,4 +22,11 @@ public interface TokenService {
     void deleteToken(String username);
 
     boolean validate(String username, String token);
+
+    /**
+     * 从token中获取用户ID
+     * @param token token
+     * @return 用户ID
+     */
+    Long getUserIdFromToken(String token);
 }

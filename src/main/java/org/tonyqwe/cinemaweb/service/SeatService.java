@@ -14,6 +14,11 @@ public interface SeatService {
     List<SeatVO> getSeatsByHallId(Long hallId);
 
     /**
+     * 根据场次ID获取座位列表（考虑场次的座位锁定状态）
+     */
+    List<SeatVO> getSeatsByShowtimeId(Long showtimeId);
+
+    /**
      * 保存座位
      */
     boolean saveSeat(SeatDTO seatDTO);
