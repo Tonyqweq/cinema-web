@@ -49,7 +49,7 @@ public class AppProperties {
         private List<String> movieApiRoles = List.of("SUPER_ADMIN", "ADMIN", "STAFF");
         private List<String> orderApiRoles = List.of("SUPER_ADMIN", "ADMIN","STAFF");
         private List<String> userApiRoles = List.of("SUPER_ADMIN", "ADMIN");
-        private List<String> settingsApiRoles = List.of("SUPER_ADMIN", "ADMIN","STAFF");
+        private List<String> settingsApiRoles = List.of("SUPER_ADMIN", "ADMIN","STAFF","USER");
 
         public List<String> getCinemaApiRoles() { return cinemaApiRoles; }
         public void setCinemaApiRoles(List<String> cinemaApiRoles) { this.cinemaApiRoles = movieApiRoles; }

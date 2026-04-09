@@ -24,6 +24,9 @@ public class SysUsers {
     @TableField("email")
     private String email;           // 邮箱
 
+    @TableField("phone")
+    private String phone;           // 手机号
+
     @TableField("status")
     private Integer status;         // 状态（0-禁用，1-启用）
 

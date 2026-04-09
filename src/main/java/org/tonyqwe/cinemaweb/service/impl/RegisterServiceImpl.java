@@ -71,7 +71,7 @@ public class RegisterServiceImpl implements RegisterService {
         userRoleMapper.insert(userRole);
         
         // 生成token并缓存
-        String token = tokenService.generateToken(request.getUsername());
+        String token = tokenService.generateToken(request.getUsername(), Long.valueOf(user.getId()));
         tokenService.cacheToken(request.getUsername(), token);
         return token;
     }

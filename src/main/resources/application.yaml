@@ -21,6 +21,28 @@ spring:
       port: 6379
       password: xiejun198170
       database: 0
+
+  rabbitmq:
+    host: 119.91.231.127
+    port: 5672
+    username: rabbitmq
+    password: 4dzTrtmMr5KLzzc3
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1000
+          multiplier: 2
+          max-interval: 10000
+          max-retries: 3
+
+  # 禁用Redisson自动配置
+  autoconfigure:
+    exclude:
+      - org.redisson.spring.starter.RedissonAutoConfiguration
+
   mail:
     host: smtp.qq.com
     port: 465
@@ -38,16 +60,17 @@ spring:
 app:
   jwt:
     issuer: security-demo
-    access-token-ttl: 15m
+    access-token-ttl: 3d
     refresh-token-ttl: 7d
     secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32_BYTES_MIN_CHANGE_ME"
-    expiration-seconds: 3600
+    expiration-seconds: 259200
   token:
     redis-prefix: "login:token:"
   cors:
     allowed-origins:
       - "http://localhost:5173"
       - "http://localhost:5175"
+      - "http://localhost:8080"
   # 与 sys_roles.name 一致；无权限的用户访问对应 API 将返回 403
   security:
     cinema-api-roles:
@@ -69,6 +92,7 @@ app:
       - SUPER_ADMIN
       - ADMIN
       - STAFF
+      - USER
 
 
 mybatis-plus:
