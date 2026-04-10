@@ -7,9 +7,8 @@ spring:
       max-file-size: 20MB
       max-request-size: 25MB
   datasource:
-    url: jdbc:mysql://119.91.231.127:3306/cinema_database?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-    username: root
-    password: 198170xiejun1981
+    url: aaaa
+    password: bbbb
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,9 +16,9 @@ spring:
 
   data:
     redis:
-      host: 119.91.231.127
+      host: cccc
       port: 6379
-      password: xiejun198170
+      password: dddd
       database: 0
 
   rabbitmq:
@@ -46,8 +45,8 @@ spring:
   mail:
     host: smtp.qq.com
     port: 465
-    username: 2419231380@qq.com
-    password: hcswprnzqjodebib
+    username: eeee
+    password: ffff
     protocol: smtp
     properties:
       mail:
@@ -62,8 +61,10 @@ app:
     issuer: security-demo
     access-token-ttl: 3d
     refresh-token-ttl: 7d
+
     secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_32_BYTES_MIN_CHANGE_ME"
     expiration-seconds: 259200
+
   token:
     redis-prefix: "login:token:"
   cors:
