@@ -77,14 +77,17 @@ app:
       - SUPER_ADMIN
       - ADMIN
       - STAFF
+      - USER
     movie-api-roles:
       - SUPER_ADMIN
       - ADMIN
       - STAFF
+      - USER
     order-api-roles:
       - SUPER_ADMIN
       - ADMIN
       - STAFF
+      - USER
     user-api-roles:
       - SUPER_ADMIN
       - ADMIN
@@ -93,6 +96,14 @@ app:
       - ADMIN
       - STAFF
       - USER
+
+# MinIO配置
+minio:
+  endpoint: http://119.91.231.127:19000
+  access-key: minio
+  secret-key: HZpk6nwHiMY6KJxx
+  bucket-name: cinema-movies
+  url-prefix: http://119.91.231.127:19000/cinema-movies
 
 
 mybatis-plus:
