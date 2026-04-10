@@ -40,27 +40,22 @@ public class SecurityConfig {
                 // 认证与授权规则（先匹配更具体的路径）
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/sessions/**", "/error").permitAll()
-                        //影院模块
-                        .requestMatchers("/api/cinemas/**")
-                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
-                                appProperties.getSecurity().getCinemaApiRoles()))
-                        //影厅模块
-                        .requestMatchers("/api/halls/**")
-                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
-                                appProperties.getSecurity().getCinemaApiRoles()))
-                        // 影片模块：仅允许配置的角色访问（与 app.security.movie-api-roles / sys_roles.name 一致）
-                        .requestMatchers("/api/movies/**")
-                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
-                                appProperties.getSecurity().getMovieApiRoles()))
-                        .requestMatchers("/api/orders/**")
-                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
-                                appProperties.getSecurity().getOrderApiRoles()))
+                        // 图片代理接口：允许匿名访问
+                        .requestMatchers("/api/movies/proxy-image").permitAll()
+                        // 影院模块：允许所有已认证用户访问
+                        .requestMatchers("/api/cinemas/**").authenticated()
+                        // 影厅模块：允许所有已认证用户访问
+                        .requestMatchers("/api/halls/**").authenticated()
+                        // 影片模块：允许所有已认证用户访问
+                        .requestMatchers("/api/movies/**").authenticated()
+                        // 订单模块：允许所有已认证用户访问
+                        .requestMatchers("/api/orders/**").authenticated()
+                        // 用户模块：仅允许管理员访问
                         .requestMatchers("/api/users/**", "/admin/users/**", "/api/admin/users/**")
                         .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
                                 appProperties.getSecurity().getUserApiRoles()))
-                        .requestMatchers("/api/settings/**")
-                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
-                                appProperties.getSecurity().getSettingsApiRoles()))
+                        // 设置模块：允许所有已认证用户访问
+                        .requestMatchers("/api/settings/**").authenticated()
                         // 示例与其它已登录接口：任意已认证用户
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()

@@ -2,6 +2,7 @@ package org.tonyqwe.cinemaweb.controller;
 
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +16,15 @@ import org.tonyqwe.cinemaweb.domain.entity.Movies;
 import org.tonyqwe.cinemaweb.domain.vo.MovieVO;
 import org.tonyqwe.cinemaweb.service.MovieService;
 import org.tonyqwe.cinemaweb.service.CinemaMovieRelationService;
+import org.tonyqwe.cinemaweb.service.MinioService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +39,9 @@ public class MovieController {
 
     @Resource
     private CinemaMovieRelationService cinemaMovieRelationService;
+    
+    @Resource
+    private MinioService minioService;
 
     /**
      * 分页查询电影列表
@@ -57,10 +65,10 @@ public class MovieController {
 
     /**
      * 获取筛选项（语言/国家地区）
-     * GET /api/movies/filters
+     * GET /api/movies/filters     
      */
     @GetMapping("/filters")
-    public ResponseEntity<ResponseResult<Map<String, Object>>> filters() {
+    public ResponseEntity<ResponseResult<Map<String, Object>>> filters() {      
         Map<String, Object> map = new HashMap<>();
         map.put("languages", movieService.listLanguages());
         map.put("countries", movieService.listCountries());
@@ -68,7 +76,7 @@ public class MovieController {
     }
 
     /**
-     * 新增电影（无需 id，状态默认上架）
+     * 新增电影（无需 id,状态默认上架）
      * POST /api/movies
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -82,11 +90,26 @@ public class MovieController {
      * POST /api/movies/import
      */
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseResult<MovieImportResult>> importExcel(
+    public ResponseEntity<ResponseResult<MovieImportResult>> importExcel(       
             @RequestParam("file") MultipartFile file
     ) throws IOException {
-        MovieImportResult result = movieService.importMoviesFromExcel(file);
+        MovieImportResult result = movieService.importMoviesFromExcel(file);    
         return ResponseEntity.ok(ResponseResult.success(result));
+    }
+
+    /**
+     * 上传海报
+     * POST /api/movies/upload-poster
+     */
+    @PostMapping("/upload-poster")
+    public ResponseEntity<?> uploadPoster(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = minioService.uploadFile(file);
+            return ResponseEntity.ok(ResponseResult.success(url));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseResult.error(500, "上传失败：" + e.getMessage()));
+        }
     }
 
     /**
@@ -98,14 +121,14 @@ public class MovieController {
         Movies movie = movieService.getMovieById(id);
         if (movie == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseResult.error(404, "movie not found"));
+                    .body(ResponseResult.error(404, "movie not found"));        
         }
-        return ResponseEntity.ok(ResponseResult.success(convertToVO(movie)));
+        return ResponseEntity.ok(ResponseResult.success(convertToVO(movie)));   
     }
 
     /**
-     * 更新电影信息（不可改 id、status）
-     * PUT /api/movies/{id}
+     * 更新电影信息（不可改 id,status）
+     * PUT /api/movies/{id}   
      */
     @PutMapping("/{id}")
     public ResponseEntity<ResponseResult<MovieVO>> updateInfo(
@@ -115,9 +138,9 @@ public class MovieController {
         Movies updated = movieService.updateMovieInfo(id, request);
         if (updated == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseResult.error(404, "movie not found"));
+                    .body(ResponseResult.error(404, "movie not found"));        
         }
-        return ResponseEntity.ok(ResponseResult.success(convertToVO(updated)));
+        return ResponseEntity.ok(ResponseResult.success(convertToVO(updated))); 
     }
 
     /**
@@ -134,16 +157,16 @@ public class MovieController {
             List<Long> cinemaIds = cinemaMovieRelationService.getCinemaIdsByMovieId(id);
             if (cinemaIds != null && !cinemaIds.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ResponseResult.error(400, "该电影已绑定到影院，无法下架"));
+                        .body(ResponseResult.error(400, "该电影已绑定到 影院，无法下架"));
             }
         }
-        
+
         Movies updated = movieService.updateMovieStatus(id, request.getStatus());
         if (updated == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseResult.error(404, "movie not found"));
+                    .body(ResponseResult.error(404, "movie not found"));        
         }
-        return ResponseEntity.ok(ResponseResult.success(convertToVO(updated)));
+        return ResponseEntity.ok(ResponseResult.success(convertToVO(updated))); 
     }
 
     /**
@@ -158,13 +181,13 @@ public class MovieController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ResponseResult.error(400, "该电影已绑定到影院，无法删除"));
         }
-        
+
         boolean ok = movieService.deleteMovie(id);
         if (!ok) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseResult.error(404, "movie not found"));
+                    .body(ResponseResult.error(404, "movie not found"));        
         }
-        return ResponseEntity.ok(ResponseResult.success("deleted", null));
+        return ResponseEntity.ok(ResponseResult.success("deleted", null));      
     }
 
     /**
@@ -175,12 +198,40 @@ public class MovieController {
     public ResponseEntity<ResponseResult<List<MovieVO>>> getMoviesByCinemaId(@PathVariable("cinemaId") Long cinemaId) {
         List<Long> movieIds = cinemaMovieRelationService.getMovieIdsByCinemaId(cinemaId);
         if (movieIds == null || movieIds.isEmpty()) {
-            return ResponseEntity.ok(ResponseResult.success(List.of()));
+            return ResponseEntity.ok(ResponseResult.success(List.of()));        
         }
-        
+
         List<Movies> movies = movieService.getMoviesByIds(movieIds);
         List<MovieVO> movieVOs = movies.stream().map(this::convertToVO).collect(Collectors.toList());
         return ResponseEntity.ok(ResponseResult.success(movieVOs));
+    }
+
+    /**
+     * 图片代理接口，用于访问MinIO图片
+     * GET /api/movies/proxy-image?url=xxx
+     */
+    @GetMapping("/proxy-image")
+    public ResponseEntity<?> proxyImage(@RequestParam("url") String url) {
+        try {
+            URL imageUrl = new URL(url);
+            HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
+            connection.setRequestMethod("GET");
+            
+            int statusCode = connection.getResponseCode();
+            if (statusCode != HttpURLConnection.HTTP_OK) {
+                return ResponseEntity.status(statusCode).build();
+            }
+            
+            String contentType = connection.getContentType();
+            InputStream inputStream = connection.getInputStream();
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(new InputStreamResource(inputStream));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseResult.error(500, "图片代理失败：" + e.getMessage()));
+        }
     }
 
     private MovieVO convertToVO(Movies movie) {
