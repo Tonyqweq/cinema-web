@@ -1,15 +1,1 @@
-singleServerConfig:
-  address: "redis://119.91.231.127:6379"
-  password: "xiejun198170"
-  database: 0
-  connectionMinimumIdleSize: 10
-  connectionPoolSize: 64
-  idleConnectionTimeout: 10000
-  connectTimeout: 10000
-  timeout: 3000
-  retryAttempts: 3
-  retryInterval: 1500
-  subscriptionsPerConnection: 5
-  clientName: cinema-web
-  subscriptionConnectionMinimumIdleSize: 1
-  subscriptionConnectionPoolSize: 50
+
