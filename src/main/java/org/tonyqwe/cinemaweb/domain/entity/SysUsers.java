@@ -38,7 +38,4 @@ public class SysUsers {
 
     @TableField("update_time")
     private Date updateTime;         // 创建日期
-
-    @TableField("avatar")
-    private String avatar;           // 头像URL
 }

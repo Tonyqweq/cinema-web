@@ -1,79 +1,69 @@
 package org.tonyqwe.cinemaweb.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.tonyqwe.cinemaweb.domain.entity.MovieReview;
 import org.tonyqwe.cinemaweb.mapper.MovieReviewMapper;
 import org.tonyqwe.cinemaweb.service.MovieReviewService;
 
-@Service
-public class MovieReviewServiceImpl extends ServiceImpl<MovieReviewMapper, MovieReview> implements MovieReviewService {
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
+@Service
+public class MovieReviewServiceImpl implements MovieReviewService {
+    
     @Resource
     private MovieReviewMapper movieReviewMapper;
-
+    
     @Override
     public IPage<MovieReview> getReviewsByMovieId(Long movieId, long page, long pageSize) {
-        Page<MovieReview> mpPage = new Page<>(page, pageSize);
-        LambdaQueryWrapper<MovieReview> qw = new LambdaQueryWrapper<>();
-        qw.eq(MovieReview::getMovieId, movieId);
-        qw.orderByDesc(MovieReview::getCreatedAt);
-        return movieReviewMapper.selectPage(mpPage, qw);
+        Page<MovieReview> pagination = new Page<>(page, pageSize);
+        return movieReviewMapper.getReviewsByMovieId(pagination, movieId);
     }
-
+    
     @Override
-    @Transactional
-    public MovieReview createOrUpdateReview(Long movieId, Integer userId, Integer rating, String comment) {
-        LambdaQueryWrapper<MovieReview> qw = new LambdaQueryWrapper<>();
-        qw.eq(MovieReview::getMovieId, movieId);
-        qw.eq(MovieReview::getUserId, userId);
-        
-        MovieReview existingReview = movieReviewMapper.selectOne(qw);
-        
+    public MovieReview getReviewByUserAndMovie(Long userId, Long movieId) {
+        return movieReviewMapper.getReviewByUserAndMovie(userId, movieId);
+    }
+    
+    @Override
+    public boolean saveOrUpdateReview(MovieReview review) {
+        MovieReview existingReview = movieReviewMapper.getReviewByUserAndMovie(review.getUserId(), review.getMovieId());
         if (existingReview != null) {
-            existingReview.setRating(rating);
-            existingReview.setComment(comment);
-            movieReviewMapper.updateById(existingReview);
-            return existingReview;
+            // 更新现有评论
+            existingReview.setRating(review.getRating());
+            existingReview.setComment(review.getComment());
+            existingReview.setUpdatedAt(LocalDateTime.now());
+            return movieReviewMapper.updateById(existingReview) > 0;
         } else {
-            MovieReview newReview = new MovieReview();
-            newReview.setMovieId(movieId);
-            newReview.setUserId(userId);
-            newReview.setRating(rating);
-            newReview.setComment(comment);
-            movieReviewMapper.insert(newReview);
-            return newReview;
+            // 创建新评论
+            review.setCreatedAt(LocalDateTime.now());
+            review.setUpdatedAt(LocalDateTime.now());
+            return movieReviewMapper.insert(review) > 0;
         }
     }
-
+    
     @Override
-    public MovieReview getUserReview(Long movieId, Integer userId) {
-        LambdaQueryWrapper<MovieReview> qw = new LambdaQueryWrapper<>();
-        qw.eq(MovieReview::getMovieId, movieId);
-        qw.eq(MovieReview::getUserId, userId);
-        return movieReviewMapper.selectOne(qw);
+    public boolean deleteReview(Long reviewId, Long userId) {
+        MovieReview review = movieReviewMapper.selectById(reviewId);
+        if (review != null && review.getUserId().equals(userId)) {
+            return movieReviewMapper.deleteById(reviewId) > 0;
+        }
+        return false;
     }
-
+    
     @Override
-    public boolean deleteReview(Long reviewId, Integer userId) {
-        LambdaQueryWrapper<MovieReview> qw = new LambdaQueryWrapper<>();
-        qw.eq(MovieReview::getId, reviewId);
-        qw.eq(MovieReview::getUserId, userId);
-        return movieReviewMapper.delete(qw) > 0;
-    }
-
-    @Override
-    public Double getAverageRating(Long movieId) {
-        return movieReviewMapper.getAverageRating(movieId);
-    }
-
-    @Override
-    public Integer getReviewCount(Long movieId) {
-        return movieReviewMapper.getReviewCount(movieId);
+    public Map<String, Object> getReviewStatsByMovieId(Long movieId) {
+        Map<String, Object> stats = new HashMap<>();
+        Double averageRating = movieReviewMapper.getAverageRatingByMovieId(movieId);
+        Integer reviewCount = movieReviewMapper.getReviewCountByMovieId(movieId);
+        
+        stats.put("averageRating", averageRating != null ? averageRating : 0.0);
+        stats.put("reviewCount", reviewCount != null ? reviewCount : 0);
+        
+        return stats;
     }
 }

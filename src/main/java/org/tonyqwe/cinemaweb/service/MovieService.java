@@ -29,5 +29,7 @@ public interface MovieService extends IService<Movies> {
     boolean deleteMovie(Long id);
 
     java.util.List<Movies> getMoviesByIds(java.util.List<Long> ids);
+    
+    Double getMovieRating(Long movieId);
 }
 
