@@ -18,6 +18,5 @@ public class UserVO {
     private Integer status;
     private LocalDateTime createdAt;
     private LocalDateTime updateTime;
-    private String avatar;           // 头像URL
     private List<RoleVO> roles;
 }

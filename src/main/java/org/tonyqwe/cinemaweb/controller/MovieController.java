@@ -207,30 +207,6 @@ public class MovieController {
     }
 
     /**
-     * 根据电影ID列表批量获取电影详情
-     * GET /api/movies/batch?ids=1,2,3
-     */
-    @GetMapping("/batch")
-    public ResponseEntity<ResponseResult<List<MovieVO>>> getMoviesByIds(@RequestParam("ids") String ids) {
-        try {
-            List<Long> movieIds = java.util.Arrays.stream(ids.split(","))
-                    .map(String::trim)
-                    .map(Long::parseLong)
-                    .collect(Collectors.toList());
-            
-            if (movieIds.isEmpty()) {
-                return ResponseEntity.ok(ResponseResult.success(List.of()));
-            }
-
-            List<Movies> movies = movieService.getMoviesByIds(movieIds);
-            List<MovieVO> movieVOs = movies.stream().map(this::convertToVO).collect(Collectors.toList());
-            return ResponseEntity.ok(ResponseResult.success(movieVOs));
-        } catch (NumberFormatException e) {
-            return ResponseEntity.badRequest().body(ResponseResult.error(400, "Invalid movie IDs format"));
-        }
-    }
-
-    /**
      * 图片代理接口，用于访问MinIO图片
      * GET /api/movies/proxy-image?url=xxx
      */
@@ -273,6 +249,33 @@ public class MovieController {
         vo.setStatus(movie.getStatus());
         vo.setCreatedAt(movie.getCreatedAt());
         vo.setUpdatedAt(movie.getUpdatedAt());
+        vo.setRating(movieService.getMovieRating(movie.getId()));
         return vo;
+    }
+    
+    /**
+     * 批量获取电影信息
+     * GET /api/movies/batch?ids=1,2,3
+     */
+    @GetMapping("/batch")
+    public ResponseEntity<ResponseResult<List<MovieVO>>> getMoviesByIds(@RequestParam("ids") String ids) {
+        try {
+            // 解析 ids 参数，格式为逗号分隔的数字
+            List<Long> movieIds = java.util.Arrays.stream(ids.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            
+            if (movieIds.isEmpty()) {
+                return ResponseEntity.ok(ResponseResult.success(List.of()));
+            }
+            
+            List<Movies> movies = movieService.getMoviesByIds(movieIds);
+            List<MovieVO> movieVOs = movies.stream().map(this::convertToVO).collect(Collectors.toList());
+            return ResponseEntity.ok(ResponseResult.success(movieVOs));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseResult.error(500, "批量获取电影失败：" + e.getMessage()));
+        }
     }
 }

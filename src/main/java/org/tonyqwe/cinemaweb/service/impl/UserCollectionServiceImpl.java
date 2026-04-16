@@ -3,78 +3,62 @@ package org.tonyqwe.cinemaweb.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.tonyqwe.cinemaweb.domain.entity.UserCollection;
 import org.tonyqwe.cinemaweb.mapper.UserCollectionMapper;
 import org.tonyqwe.cinemaweb.service.UserCollectionService;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
-public class UserCollectionServiceImpl extends ServiceImpl<UserCollectionMapper, UserCollection> implements UserCollectionService {
+public class UserCollectionServiceImpl implements UserCollectionService {
 
     @Resource
     private UserCollectionMapper userCollectionMapper;
 
     @Override
-    @Transactional
-    public boolean addCollection(Integer userId, Long movieId) {
-        LambdaQueryWrapper<UserCollection> qw = new LambdaQueryWrapper<>();
-        qw.eq(UserCollection::getUserId, userId);
-        qw.eq(UserCollection::getMovieId, movieId);
+    public IPage<UserCollection> getUserCollections(Long userId, long page, long pageSize) {
+        Page<UserCollection> pageInfo = new Page<>(page, pageSize);
+        LambdaQueryWrapper<UserCollection> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserCollection::getUserId, userId)
+                    .orderByDesc(UserCollection::getCreatedAt);
+        return userCollectionMapper.selectPage(pageInfo, queryWrapper);
+    }
+
+    @Override
+    public boolean addCollection(Long userId, Long movieId) {
+        // 检查是否已经收藏
+        LambdaQueryWrapper<UserCollection> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserCollection::getUserId, userId)
+                    .eq(UserCollection::getMovieId, movieId);
+        UserCollection existing = userCollectionMapper.selectOne(queryWrapper);
         
-        UserCollection existing = userCollectionMapper.selectOne(qw);
         if (existing != null) {
-            return true;
+            return true; // 已经收藏，直接返回成功
         }
-        
+
         UserCollection collection = new UserCollection();
         collection.setUserId(userId);
         collection.setMovieId(movieId);
+        collection.setCreatedAt(LocalDateTime.now());
+
         return userCollectionMapper.insert(collection) > 0;
     }
 
     @Override
-    @Transactional
-    public boolean removeCollection(Integer userId, Long movieId) {
-        LambdaQueryWrapper<UserCollection> qw = new LambdaQueryWrapper<>();
-        qw.eq(UserCollection::getUserId, userId);
-        qw.eq(UserCollection::getMovieId, movieId);
-        return userCollectionMapper.delete(qw) > 0;
+    public boolean removeCollection(Long userId, Long movieId) {
+        LambdaQueryWrapper<UserCollection> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserCollection::getUserId, userId)
+                    .eq(UserCollection::getMovieId, movieId);
+        return userCollectionMapper.delete(queryWrapper) > 0;
     }
 
     @Override
-    public boolean isCollected(Integer userId, Long movieId) {
-        LambdaQueryWrapper<UserCollection> qw = new LambdaQueryWrapper<>();
-        qw.eq(UserCollection::getUserId, userId);
-        qw.eq(UserCollection::getMovieId, movieId);
-        return userCollectionMapper.selectCount(qw) > 0;
-    }
-
-    @Override
-    public IPage<UserCollection> getUserCollections(Integer userId, long page, long pageSize) {
-        Page<UserCollection> mpPage = new Page<>(page, pageSize);
-        LambdaQueryWrapper<UserCollection> qw = new LambdaQueryWrapper<>();
-        qw.eq(UserCollection::getUserId, userId);
-        qw.orderByDesc(UserCollection::getCreatedAt);
-        return userCollectionMapper.selectPage(mpPage, qw);
-    }
-
-    @Override
-    public List<Long> getUserCollectedMovieIds(Integer userId) {
-        LambdaQueryWrapper<UserCollection> qw = new LambdaQueryWrapper<>();
-        qw.eq(UserCollection::getUserId, userId);
-        qw.select(UserCollection::getMovieId);
-        return userCollectionMapper.selectList(qw).stream()
-                .map(UserCollection::getMovieId)
-                .toList();
-    }
-
-    @Override
-    public Integer getCollectionCount(Long movieId) {
-        return userCollectionMapper.getCollectionCount(movieId);
+    public boolean isCollected(Long userId, Long movieId) {
+        LambdaQueryWrapper<UserCollection> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserCollection::getUserId, userId)
+                    .eq(UserCollection::getMovieId, movieId);
+        return userCollectionMapper.selectCount(queryWrapper) > 0;
     }
 }

@@ -17,12 +17,6 @@ public class MinioConfig {
     @Value("${minio.secret-key}")
     private String secretKey;
 
-    @Value("${minio.bucket-name}")
-    private String bucketName;
-
-    @Value("${minio.url-prefix}")
-    private String urlPrefix;
-
     @Bean
     public MinioClient minioClient() {
         return MinioClient.builder()
@@ -30,12 +24,5 @@ public class MinioConfig {
                 .credentials(accessKey, secretKey)
                 .build();
     }
-
-    public String getBucketName() {
-        return bucketName;
-    }
-
-    public String getUrlPrefix() {
-        return urlPrefix;
-    }
 }
+

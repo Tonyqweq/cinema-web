@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tonyqwe.cinemaweb.mapper.UserCollectionMapper">
+
+    <select id="selectByUserId" resultType="org.tonyqwe.cinemaweb.domain.entity.UserCollection">
+        SELECT * FROM user_collection WHERE user_id = #{userId} ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByUserIdAndMovieId" resultType="org.tonyqwe.cinemaweb.domain.entity.UserCollection">
+        SELECT * FROM user_collection WHERE user_id = #{userId} AND movie_id = #{movieId}
+    </select>
+
+    <delete id="deleteByUserIdAndMovieId">
+        DELETE FROM user_collection WHERE user_id = #{userId} AND movie_id = #{movieId}
+    </delete>
+
+</mapper>

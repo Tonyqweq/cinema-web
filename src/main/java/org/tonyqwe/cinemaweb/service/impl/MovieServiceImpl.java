@@ -20,6 +20,7 @@ import org.tonyqwe.cinemaweb.domain.dto.MovieBodyRequest;
 import org.tonyqwe.cinemaweb.domain.dto.MovieImportResult;
 import org.tonyqwe.cinemaweb.domain.entity.Movies;
 import org.tonyqwe.cinemaweb.mapper.MovieMapper;
+import org.tonyqwe.cinemaweb.mapper.MovieReviewMapper;
 import org.tonyqwe.cinemaweb.service.MovieService;
 
 import java.io.IOException;
@@ -38,6 +39,9 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movies> implement
 
     @Resource
     private MovieMapper movieMapper;
+    
+    @Resource
+    private MovieReviewMapper movieReviewMapper;
 
     @Override
     public IPage<Movies> pageMovies(long page, long pageSize, String title, String language, String country, String sortBy, String sortOrder) {
@@ -349,6 +353,14 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movies> implement
         }
         String s = fmt.formatCellValue(c).trim();
         return s.isEmpty() ? null : s;
+    }
+    
+    @Override
+    public Double getMovieRating(Long movieId) {
+        if (movieId == null) {
+            return null;
+        }
+        return movieReviewMapper.getAverageRatingByMovieId(movieId);
     }
 }
 

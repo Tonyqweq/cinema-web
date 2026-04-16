@@ -23,4 +23,5 @@ public class MovieVO {
     private Integer status;
     private Date createdAt;
     private Date updatedAt;
+    private Double rating;
 }
