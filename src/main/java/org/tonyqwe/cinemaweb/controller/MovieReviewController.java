@@ -13,7 +13,9 @@ import org.tonyqwe.cinemaweb.utils.SecurityUtils;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,7 +24,7 @@ public class MovieReviewController {
     
     @Resource
     private MovieReviewService movieReviewService;
-    
+
     @Resource
     private UserService userService;
     
@@ -39,8 +41,52 @@ public class MovieReviewController {
         try {
             IPage<MovieReview> result = movieReviewService.getReviewsByMovieId(movieId, page, pageSize);
             
+            // 为每个评论添加用户头像
+            List<MovieReview> reviews = result.getRecords();
+            for (MovieReview review : reviews) {
+                // 获取用户信息
+                if (review.getUserId() != null) {
+                    SysUsers user = userService.getById(review.getUserId().intValue());
+                    if (user != null && user.getAvatar() != null) {
+                        // 使用反射为评论对象添加avatar属性
+                        try {
+                            java.lang.reflect.Field avatarField = MovieReview.class.getDeclaredField("avatar");
+                            avatarField.setAccessible(true);
+                            avatarField.set(review, user.getAvatar());
+                        } catch (Exception e) {
+                            // 如果没有avatar字段，使用Map包装
+                            // 这里我们使用另一种方式，创建一个新的Map来包装评论信息
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // 由于MovieReview实体没有avatar字段，我们需要创建一个新的列表，包含评论和头像信息
+            List<Map<String, Object>> reviewWithAvatar = new ArrayList<>();
+            for (MovieReview review : reviews) {
+                Map<String, Object> reviewMap = new HashMap<>();
+                reviewMap.put("id", review.getId());
+                reviewMap.put("movieId", review.getMovieId());
+                reviewMap.put("userId", review.getUserId());
+                reviewMap.put("rating", review.getRating());
+                reviewMap.put("comment", review.getComment());
+                reviewMap.put("createdAt", review.getCreatedAt());
+                reviewMap.put("updatedAt", review.getUpdatedAt());
+                
+                // 获取用户头像
+                if (review.getUserId() != null) {
+                    SysUsers user = userService.getById(review.getUserId().intValue());
+                    if (user != null) {
+                        reviewMap.put("avatar", user.getAvatar());
+                    }
+                }
+                
+                reviewWithAvatar.add(reviewMap);
+            }
+            
             Map<String, Object> response = new HashMap<>();
-            response.put("records", result.getRecords());
+            response.put("records", reviewWithAvatar);
             response.put("total", result.getTotal());
             response.put("current", result.getCurrent());
             response.put("size", result.getSize());

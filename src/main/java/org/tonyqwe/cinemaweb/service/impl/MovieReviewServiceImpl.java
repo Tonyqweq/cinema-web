@@ -10,6 +10,7 @@ import org.tonyqwe.cinemaweb.service.MovieReviewService;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -60,9 +61,25 @@ public class MovieReviewServiceImpl implements MovieReviewService {
         Map<String, Object> stats = new HashMap<>();
         Double averageRating = movieReviewMapper.getAverageRatingByMovieId(movieId);
         Integer reviewCount = movieReviewMapper.getReviewCountByMovieId(movieId);
+        List<Map<String, Object>> ratingDistributionList = movieReviewMapper.getRatingDistributionByMovieId(movieId);
+        
+        // 构建评分分布Map
+        Map<Integer, Integer> ratingDistribution = new HashMap<>();
+        for (Map<String, Object> item : ratingDistributionList) {
+            Integer rating = (Integer) item.get("rating");
+            Integer count = ((Number) item.get("count")).intValue();
+            ratingDistribution.put(rating, count);
+        }
+        
+        // 确保返回完整的评分分布（1-5分）
+        Map<Integer, Integer> completeDistribution = new HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            completeDistribution.put(i, ratingDistribution.getOrDefault(i, 0));
+        }
         
         stats.put("averageRating", averageRating != null ? averageRating : 0.0);
         stats.put("reviewCount", reviewCount != null ? reviewCount : 0);
+        stats.put("ratingDistribution", completeDistribution);
         
         return stats;
     }

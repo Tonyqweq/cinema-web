@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.tonyqwe.cinemaweb.domain.entity.SysRole;
 import org.tonyqwe.cinemaweb.domain.entity.SysUserRole;
 import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
@@ -15,6 +18,7 @@ import org.tonyqwe.cinemaweb.domain.vo.RoleVO;
 import org.tonyqwe.cinemaweb.domain.vo.UserListVO;
 import org.tonyqwe.cinemaweb.domain.vo.UserVO;
 import org.tonyqwe.cinemaweb.service.AdminCinemaRelationService;
+import org.tonyqwe.cinemaweb.service.MinioService;
 import org.tonyqwe.cinemaweb.service.RoleService;
 import org.tonyqwe.cinemaweb.service.UserRoleService;
 import org.tonyqwe.cinemaweb.service.UserService;
@@ -41,6 +45,9 @@ public class UserController {
 
     @Resource
     private AdminCinemaRelationService adminCinemaRelationService;
+
+    @Resource
+    private MinioService minioService;
 
     /**
      * 获取用户列表
@@ -294,5 +301,40 @@ public class UserController {
     @PutMapping("/email")
     public ResponseResult<?> changeEmail(@RequestBody ChangeEmailRequest request) {
         return userService.changeEmail(request.getEmail(), request.getVerificationCode());
+    }
+
+    /**
+     * 上传用户头像
+     */
+    @PostMapping("/avatar")
+    public ResponseResult<?> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        try {
+            // 上传文件到MinIO
+            String avatarUrl = minioService.uploadFile(file);
+            
+            // 获取当前用户
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String username = null;
+            if (principal instanceof UserDetails) {
+                username = ((UserDetails) principal).getUsername();
+            }
+            if (username == null || "anonymousUser".equals(username)) {
+                return ResponseResult.error(401, "用户未登录");
+            }
+            
+            SysUsers user = userService.getByUsername(username);
+            if (user == null) {
+                return ResponseResult.error(404, "用户不存在");
+            }
+            
+            // 更新用户头像
+            user.setAvatar(avatarUrl);
+            userService.updateById(user);
+            
+            return ResponseResult.success(avatarUrl);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.error(500, "头像上传失败：" + e.getMessage());
+        }
     }
 }
