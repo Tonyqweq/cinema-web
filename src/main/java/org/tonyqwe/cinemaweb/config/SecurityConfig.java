@@ -50,7 +50,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/movies/**").authenticated()
                         // 订单模块：允许所有已认证用户访问
                         .requestMatchers("/api/orders/**").authenticated()
-                        // 用户模块：仅允许管理员访问
+                        .requestMatchers("/api/user/wallet/**").authenticated()
+                        // 用户昵称修改：允许所有已认证用户访问
+                        .requestMatchers("/api/admin/users/nickname").authenticated()
+                        // 用户模块（其他接口）：仅允许管理员访问
                         .requestMatchers("/api/users/**", "/admin/users/**", "/api/admin/users/**")
                         .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
                                 appProperties.getSecurity().getUserApiRoles()))

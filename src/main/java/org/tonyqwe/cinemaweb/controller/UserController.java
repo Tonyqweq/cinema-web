@@ -23,6 +23,7 @@ import org.tonyqwe.cinemaweb.service.RoleService;
 import org.tonyqwe.cinemaweb.service.UserRoleService;
 import org.tonyqwe.cinemaweb.service.UserService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
+import org.tonyqwe.cinemaweb.utils.SecurityUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -301,6 +302,40 @@ public class UserController {
     @PutMapping("/email")
     public ResponseResult<?> changeEmail(@RequestBody ChangeEmailRequest request) {
         return userService.changeEmail(request.getEmail(), request.getVerificationCode());
+    }
+
+    /**
+     * 修改昵称
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/nickname")
+    public ResponseResult<?> changeNickname(@RequestBody Map<String, String> request) {
+        try {
+            // 获取当前用户
+            String username = SecurityUtils.getCurrentUsername();
+            if (username == null || "anonymousUser".equals(username)) {
+                return ResponseResult.error(401, "用户未登录");
+            }
+            
+            SysUsers user = userService.getByUsername(username);
+            if (user == null) {
+                return ResponseResult.error(404, "用户不存在");
+            }
+            
+            // 更新用户昵称
+            String nickname = request.get("nickname");
+            if (nickname == null || nickname.isEmpty()) {
+                return ResponseResult.error(400, "昵称不能为空");
+            }
+            
+            user.setNickname(nickname);
+            userService.updateById(user);
+            
+            return ResponseResult.success("昵称修改成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.error(500, "昵称修改失败：" + e.getMessage());
+        }
     }
 
     /**

@@ -74,11 +74,12 @@ public class MovieReviewController {
                 reviewMap.put("createdAt", review.getCreatedAt());
                 reviewMap.put("updatedAt", review.getUpdatedAt());
                 
-                // 获取用户头像
+                // 获取用户头像和昵称
                 if (review.getUserId() != null) {
                     SysUsers user = userService.getById(review.getUserId().intValue());
                     if (user != null) {
                         reviewMap.put("avatar", user.getAvatar());
+                        reviewMap.put("nickname", user.getNickname());
                     }
                 }
                 
