@@ -22,4 +22,11 @@
         SELECT COUNT(*) FROM movie_reviews 
         WHERE movie_id = #{movieId}
     </select>
+    
+    <select id="getRatingDistributionByMovieId" resultType="java.util.Map">
+        SELECT rating, COUNT(*) as count FROM movie_reviews 
+        WHERE movie_id = #{movieId}
+        GROUP BY rating
+        ORDER BY rating DESC
+    </select>
 </mapper>
