@@ -44,7 +44,8 @@ public interface OrderService {
      * 支付订单
      * @param orderId 订单ID
      * @param userId 用户ID
+     * @param paymentMethod 支付方式
      * @return 是否成功
      */
-    boolean payOrder(Long orderId, Long userId);
+    boolean payOrder(Long orderId, Long userId, String paymentMethod);
 }

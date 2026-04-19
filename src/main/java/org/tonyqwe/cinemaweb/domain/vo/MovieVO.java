@@ -1,8 +1,10 @@
 package org.tonyqwe.cinemaweb.domain.vo;
 
 import lombok.Data;
+import org.tonyqwe.cinemaweb.domain.entity.Tags;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 电影信息展示对象
@@ -24,4 +26,5 @@ public class MovieVO {
     private Date createdAt;
     private Date updatedAt;
     private Double rating;
+    private List<Tags> tags;
 }

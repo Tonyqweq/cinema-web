@@ -11,6 +11,7 @@ import org.tonyqwe.cinemaweb.service.TokenService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 订单控制器
@@ -147,7 +148,7 @@ public class OrderController {
      * PUT /api/orders/{id}/pay
      */
     @PutMapping("/{id}/pay")
-    public ResponseEntity<ResponseResult<Boolean>> payOrder(@PathVariable Long id, HttpServletRequest httpRequest) {
+    public ResponseEntity<ResponseResult<Boolean>> payOrder(@PathVariable Long id, @RequestBody(required = false) Map<String, String> request, HttpServletRequest httpRequest) {
         try {
             // 从请求头中获取token
             String token = httpRequest.getHeader("Authorization");
@@ -161,8 +162,11 @@ public class OrderController {
                 return ResponseEntity.ok(ResponseResult.error(401, "未登录或登录已过期"));
             }
 
+            // 获取支付方式
+            String paymentMethod = request != null ? request.get("paymentMethod") : null;
+
             // 支付订单
-            boolean result = orderService.payOrder(id, userId);
+            boolean result = orderService.payOrder(id, userId, paymentMethod);
             return ResponseEntity.ok(ResponseResult.success(result));
         } catch (Exception e) {
             return ResponseEntity.ok(ResponseResult.error(500, e.getMessage()));

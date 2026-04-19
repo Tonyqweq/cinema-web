@@ -6,15 +6,22 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.text.SimpleDateFormat;
 import org.tonyqwe.cinemaweb.domain.dto.OrderRequest;
 import org.tonyqwe.cinemaweb.domain.entity.Orders;
 import org.tonyqwe.cinemaweb.domain.entity.SeatStatus;
 import org.tonyqwe.cinemaweb.domain.entity.Seats;
 import org.tonyqwe.cinemaweb.domain.entity.Showtimes;
+import org.tonyqwe.cinemaweb.domain.entity.Movies;
+import org.tonyqwe.cinemaweb.domain.entity.Cinemas;
+import org.tonyqwe.cinemaweb.domain.entity.Halls;
 import org.tonyqwe.cinemaweb.mapper.OrderMapper;
 import org.tonyqwe.cinemaweb.mapper.SeatMapper;
 import org.tonyqwe.cinemaweb.mapper.SeatStatusMapper;
 import org.tonyqwe.cinemaweb.mapper.ShowtimesMapper;
+import org.tonyqwe.cinemaweb.mapper.MovieMapper;
+import org.tonyqwe.cinemaweb.mapper.CinemaMapper;
+import org.tonyqwe.cinemaweb.mapper.HallMapper;
 import org.tonyqwe.cinemaweb.messaging.OrderTimeoutProducer;
 import org.tonyqwe.cinemaweb.service.OrderService;
 import org.tonyqwe.cinemaweb.utils.RedisLockUtil;
@@ -44,6 +51,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 
     @Resource
     private SeatStatusMapper seatStatusMapper;
+
+    @Resource
+    private MovieMapper movieMapper;
+
+    @Resource
+    private CinemaMapper cinemaMapper;
+
+    @Resource
+    private HallMapper hallMapper;
 
     @Resource
     private RedisLockUtil redisLockUtil;
@@ -173,12 +189,85 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Orders::getUserId, userId);
         wrapper.orderByDesc(Orders::getCreatedAt);
-        return orderMapper.selectList(wrapper);
+        List<Orders> orders = orderMapper.selectList(wrapper);
+        
+        // 为每个订单添加电影名、影院名、影厅名和放映时间
+        for (Orders order : orders) {
+            Showtimes showtime = showtimesMapper.selectById(order.getShowtimeId());
+            if (showtime != null) {
+                // 获取电影名
+                Movies movie = movieMapper.selectById(showtime.getMovieId());
+                if (movie != null) {
+                    order.setMovieName(movie.getTitle());
+                } else {
+                    order.setMovieName("未知电影");
+                }
+                
+                // 获取影院名
+                Cinemas cinema = cinemaMapper.selectById(showtime.getCinemaId());
+                if (cinema != null) {
+                    order.setCinemaName(cinema.getName());
+                } else {
+                    order.setCinemaName("未知影院");
+                }
+                
+                // 获取影厅名称
+                Halls hall = hallMapper.selectById(showtime.getHallId());
+                if (hall != null) {
+                    order.setHallName(hall.getName());
+                } else {
+                    order.setHallName("未知影厅");
+                }
+                
+                // 格式化放映时间
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm");
+                String startTime = dateFormat.format(showtime.getStartTime());
+                String endTime = dateFormat.format(showtime.getEndTime());
+                order.setShowtimeTime(startTime + "-" + endTime);
+            }
+        }
+        
+        return orders;
     }
 
     @Override
     public Orders getOrderById(Long orderId) {
-        return orderMapper.selectById(orderId);
+        Orders order = orderMapper.selectById(orderId);
+        if (order != null) {
+            Showtimes showtime = showtimesMapper.selectById(order.getShowtimeId());
+            if (showtime != null) {
+                // 获取电影名
+                Movies movie = movieMapper.selectById(showtime.getMovieId());
+                if (movie != null) {
+                    order.setMovieName(movie.getTitle());
+                } else {
+                    order.setMovieName("未知电影");
+                }
+                
+                // 获取影院名
+                Cinemas cinema = cinemaMapper.selectById(showtime.getCinemaId());
+                if (cinema != null) {
+                    order.setCinemaName(cinema.getName());
+                } else {
+                    order.setCinemaName("未知影院");
+                }
+                
+                // 获取影厅名称
+                Halls hall = hallMapper.selectById(showtime.getHallId());
+                if (hall != null) {
+                    order.setHallName(hall.getName());
+                } else {
+                    order.setHallName("未知影厅");
+                }
+                
+                // 格式化放映时间
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm");
+                String startTime = dateFormat.format(showtime.getStartTime());
+                String endTime = dateFormat.format(showtime.getEndTime());
+                order.setShowtimeTime(startTime + "-" + endTime);
+            }
+        }
+        return order;
     }
 
     @Override
@@ -234,7 +323,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean payOrder(Long orderId, Long userId) {
+    public boolean payOrder(Long orderId, Long userId, String paymentMethod) {
         // 1. 验证订单是否存在
         Orders order = orderMapper.selectById(orderId);
         if (order == null) {
@@ -262,6 +351,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 
             // 更新订单状态为已支付
             currentOrder.setOrderStatus(1); // 1-已支付
+            // 更新支付方式
+            if (paymentMethod != null) {
+                currentOrder.setPaymentMethod(paymentMethod);
+            }
             orderMapper.updateById(currentOrder);
 
             // 更新座位状态为已售
@@ -277,7 +370,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
             // 通过WebSocket广播座位已售消息
             seatWebSocketHandler.broadcastSeatSold(order.getShowtimeId(), order.getSeats());
 
-            log.info("订单支付成功: orderId={}, userId={}", orderId, userId);
+            log.info("订单支付成功: orderId={}, userId={}, paymentMethod={}", orderId, userId, paymentMethod);
         }
 
         return Boolean.TRUE.equals(result);

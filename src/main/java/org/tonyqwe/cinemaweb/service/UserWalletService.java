@@ -14,5 +14,5 @@ public interface UserWalletService {
     /**
      * 扣除钱包余额
      */
-    boolean deductBalance(String username, BigDecimal amount);
+    boolean deductBalance(String username, BigDecimal amount, String paymentMethod);
 }
