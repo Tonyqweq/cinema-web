@@ -362,5 +362,14 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movies> implement
         }
         return movieReviewMapper.getAverageRatingByMovieId(movieId);
     }
+
+    @Override
+    public java.util.List<Movies> getMoviesByTagIds(java.util.List<Long> tagIds) {
+        if (tagIds == null || tagIds.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        String tagIdsStr = tagIds.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
+        return movieMapper.selectMoviesByTagIds(tagIdsStr);
+    }
 }
 

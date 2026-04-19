@@ -65,6 +65,12 @@ public class Orders {
     private Date updatedAt;
 
     /**
+     * 支付方式：alipay-支付宝，wechat-微信，credit-银行卡
+     */
+    @TableField("payment_method")
+    private String paymentMethod;
+
+    /**
      * 关联的用户信息
      */
     @TableField(exist = false)
@@ -81,4 +87,28 @@ public class Orders {
      */
     @TableField(exist = false)
     private List<Seats> seatList;
+
+    /**
+     * 电影名
+     */
+    @TableField(exist = false)
+    private String movieName;
+
+    /**
+     * 影院名
+     */
+    @TableField(exist = false)
+    private String cinemaName;
+
+    /**
+     * 放映时间
+     */
+    @TableField(exist = false)
+    private String showtimeTime;
+
+    /**
+     * 影厅名称
+     */
+    @TableField(exist = false)
+    private String hallName;
 }

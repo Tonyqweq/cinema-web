@@ -19,6 +19,12 @@ public class UserWallet {
 
     private BigDecimal balance;
 
+    private BigDecimal alipayBalance;
+
+    private BigDecimal wechatBalance;
+
+    private BigDecimal creditBalance;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

@@ -44,19 +44,20 @@ public class UserWalletController {
      * 扣除钱包余额
      */
     @PostMapping("/deduct")
-    public ResponseResult<?> deductBalance(@RequestBody Map<String, BigDecimal> request) {
+    public ResponseResult<?> deductBalance(@RequestBody Map<String, Object> request) {
         try {
             String username = SecurityUtils.getCurrentUsername();
             if (username == null || "anonymousUser".equals(username)) {
                 return ResponseResult.error(401, "用户未登录");
             }
 
-            BigDecimal amount = request.get("amount");
+            BigDecimal amount = new BigDecimal(request.get("amount").toString());
+            String paymentMethod = (String) request.get("paymentMethod");
             if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
                 return ResponseResult.error(400, "扣除金额必须大于0");
             }
 
-            boolean success = userWalletService.deductBalance(username, amount);
+            boolean success = userWalletService.deductBalance(username, amount, paymentMethod);
             if (success) {
                 return ResponseResult.success("扣除成功");
             } else {

@@ -42,11 +42,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/sessions/**", "/error").permitAll()
                         // 图片代理接口：允许匿名访问
                         .requestMatchers("/api/movies/proxy-image").permitAll()
+                        // 电影列表和标签筛选：允许匿名访问
+                        .requestMatchers("/api/movies", "/api/movies/filters").permitAll()
                         // 影院模块：允许所有已认证用户访问
                         .requestMatchers("/api/cinemas/**").authenticated()
                         // 影厅模块：允许所有已认证用户访问
                         .requestMatchers("/api/halls/**").authenticated()
-                        // 影片模块：允许所有已认证用户访问
+                        // 影片模块其他接口：允许所有已认证用户访问
                         .requestMatchers("/api/movies/**").authenticated()
                         // 订单模块：允许所有已认证用户访问
                         .requestMatchers("/api/orders/**").authenticated()

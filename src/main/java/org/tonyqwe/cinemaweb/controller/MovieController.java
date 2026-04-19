@@ -43,9 +43,12 @@ public class MovieController {
     @Resource
     private MinioService minioService;
 
+    @Resource
+    private org.tonyqwe.cinemaweb.service.TagService tagService;
+
     /**
      * 分页查询电影列表
-     * GET /api/movies?page=1&pageSize=10&title=xxx&language=中文&country=中国&sortBy=duration_min&sortOrder=desc
+     * GET /api/movies?page=1&pageSize=10&title=xxx&language=中文&country=中国&sortBy=duration_min&sortOrder=desc&tagIds=1,2,3
      */
     @GetMapping
     public ResponseEntity<ResponseResult<MoviePageResponse>> list(
@@ -55,16 +58,37 @@ public class MovieController {
             @RequestParam(required = false) String language,
             @RequestParam(required = false) String country,
             @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String sortOrder
+            @RequestParam(required = false) String sortOrder,
+            @RequestParam(required = false) String tagIds
     ) {
-        IPage<Movies> result = movieService.pageMovies(page, pageSize, title, language, country, sortBy, sortOrder);
-        List<MovieVO> movieVOs = result.getRecords().stream().map(this::convertToVO).collect(Collectors.toList());
-        MoviePageResponse response = new MoviePageResponse(result.getTotal(), movieVOs);
+        List<Movies> movies;
+        
+        // 如果有标签筛选参数
+        if (tagIds != null && !tagIds.isBlank()) {
+            List<Long> tagIdList = java.util.Arrays.stream(tagIds.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            movies = movieService.getMoviesByTagIds(tagIdList);
+        } else {
+            IPage<Movies> result = movieService.pageMovies(page, pageSize, title, language, country, sortBy, sortOrder);
+            movies = result.getRecords();
+        }
+        
+        List<MovieVO> movieVOs = movies.stream().map(this::convertToVO).collect(Collectors.toList());
+        
+        // 如果有标签筛选且不是分页查询，则movies数量就是总数；否则需要分页
+        long total = movies.size();
+        if (tagIds == null || tagIds.isBlank()) {
+            IPage<Movies> result = movieService.pageMovies(page, pageSize, title, language, country, sortBy, sortOrder);
+            total = result.getTotal();
+        }
+        
+        MoviePageResponse response = new MoviePageResponse(total, movieVOs);
         return ResponseEntity.ok(ResponseResult.success(response));
     }
 
     /**
-     * 获取筛选项（语言/国家地区）
+     * 获取筛选项（语言/国家地区/标签）
      * GET /api/movies/filters     
      */
     @GetMapping("/filters")
@@ -72,6 +96,7 @@ public class MovieController {
         Map<String, Object> map = new HashMap<>();
         map.put("languages", movieService.listLanguages());
         map.put("countries", movieService.listCountries());
+        map.put("tags", tagService.getAllTags());
         return ResponseEntity.ok(ResponseResult.success(map));
     }
 
@@ -250,6 +275,7 @@ public class MovieController {
         vo.setCreatedAt(movie.getCreatedAt());
         vo.setUpdatedAt(movie.getUpdatedAt());
         vo.setRating(movieService.getMovieRating(movie.getId()));
+        vo.setTags(tagService.getTagsByMovieId(movie.getId()));
         return vo;
     }
     
@@ -277,5 +303,26 @@ public class MovieController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseResult.error(500, "批量获取电影失败：" + e.getMessage()));
         }
+    }
+
+    /**
+     * 更新电影标签
+     * PUT /api/movies/{id}/tags
+     */
+    @PutMapping("/{id}/tags")
+    public ResponseEntity<ResponseResult<Void>> updateMovieTags(
+            @PathVariable("id") Long id,
+            @RequestBody Map<String, List<Long>> request) {
+        List<Long> tagIds = request.get("tagIds");
+        
+        // 先删除该电影的所有标签
+        tagService.removeAllTagsFromMovie(id);
+        
+        // 添加新标签
+        if (tagIds != null && !tagIds.isEmpty()) {
+            tagService.addTagsToMovie(id, tagIds);
+        }
+        
+        return ResponseEntity.ok(ResponseResult.success("标签更新成功", null));
     }
 }

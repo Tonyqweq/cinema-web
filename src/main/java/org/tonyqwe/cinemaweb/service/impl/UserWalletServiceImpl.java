@@ -31,6 +31,9 @@ public class UserWalletServiceImpl implements UserWalletService {
             wallet = new UserWallet();
             wallet.setUserId(userId);
             wallet.setBalance(BigDecimal.ZERO);
+            wallet.setAlipayBalance(BigDecimal.ZERO);
+            wallet.setWechatBalance(BigDecimal.ZERO);
+            wallet.setCreditBalance(BigDecimal.ZERO);
             userWalletMapper.insert(wallet);
         }
         
@@ -38,24 +41,59 @@ public class UserWalletServiceImpl implements UserWalletService {
     }
 
     @Override
-    public boolean deductBalance(String username, BigDecimal amount) {
+    public boolean deductBalance(String username, BigDecimal amount, String paymentMethod) {
         // 先获取钱包
         UserWallet wallet = getWalletByUsername(username);
         if (wallet == null) {
             return false;
         }
 
-        // 检查余额是否足够
-        if (wallet.getBalance().compareTo(amount) < 0) {
+        // 检查对应支付方式的余额是否足够
+        BigDecimal currentBalance = BigDecimal.ZERO;
+        switch (paymentMethod) {
+            case "alipay":
+                currentBalance = wallet.getAlipayBalance();
+                break;
+            case "wechat":
+                currentBalance = wallet.getWechatBalance();
+                break;
+            case "credit":
+                currentBalance = wallet.getCreditBalance();
+                break;
+            default:
+                currentBalance = wallet.getBalance();
+                break;
+        }
+
+        if (currentBalance.compareTo(amount) < 0) {
             return false;
         }
 
-        // 扣除余额
-        BigDecimal newBalance = wallet.getBalance().subtract(amount);
-        LambdaUpdateWrapper<UserWallet> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(UserWallet::getUserId, wallet.getUserId())
-                .set(UserWallet::getBalance, newBalance);
+        // 扣除对应支付方式的余额
+        switch (paymentMethod) {
+            case "alipay":
+                wallet.setAlipayBalance(currentBalance.subtract(amount));
+                break;
+            case "wechat":
+                wallet.setWechatBalance(currentBalance.subtract(amount));
+                break;
+            case "credit":
+                wallet.setCreditBalance(currentBalance.subtract(amount));
+                break;
+            default:
+                wallet.setBalance(currentBalance.subtract(amount));
+                break;
+        }
 
-        return userWalletMapper.update(null, updateWrapper) > 0;
+        // 更新总余额
+        wallet.setBalance(
+            wallet.getAlipayBalance().add(
+                wallet.getWechatBalance().add(
+                    wallet.getCreditBalance()
+                )
+            )
+        );
+
+        return userWalletMapper.updateById(wallet) > 0;
     }
 }

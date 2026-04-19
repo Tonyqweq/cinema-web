@@ -31,5 +31,7 @@ public interface MovieService extends IService<Movies> {
     java.util.List<Movies> getMoviesByIds(java.util.List<Long> ids);
     
     Double getMovieRating(Long movieId);
+
+    java.util.List<Movies> getMoviesByTagIds(java.util.List<Long> tagIds);
 }
 
