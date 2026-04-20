@@ -35,4 +35,9 @@ public interface UserService extends IService<SysUsers> {
      * 修改邮箱
      */
     ResponseResult<?> changeEmail(String email, String verificationCode);
+
+    /**
+     * 获取用户总数
+     */
+    long count();
 }

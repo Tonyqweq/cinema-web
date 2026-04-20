@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 认证与授权规则（先匹配更具体的路径）
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/sessions/**", "/error").permitAll()
+                        .requestMatchers("/sessions/**", "/api/sessions/**", "/api/dashboard/**", "/error").permitAll()
                         // 图片代理接口：允许匿名访问
                         .requestMatchers("/api/movies/proxy-image").permitAll()
                         // 电影列表和标签筛选：允许匿名访问
@@ -79,7 +79,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(appProperties.getCors().getAllowedOrigins());
         config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(java.util.List.of("*"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

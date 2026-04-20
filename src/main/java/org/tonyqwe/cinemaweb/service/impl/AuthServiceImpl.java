@@ -47,12 +47,21 @@ public class AuthServiceImpl implements AuthService {
         String email = request.getEmail();
         String verificationCode = request.getVerificationCode();
         
-        if (username == null || password == null || email == null || verificationCode == null) {
-            throw new BadCredentialsException("invalid username, password, email or verification code");
+        if (password == null || email == null || verificationCode == null) {
+            throw new BadCredentialsException("invalid password, email or verification code");
         }
         
-        // 根据用户名获取用户信息
-        SysUsers user = userService.getByUsername(username);
+        SysUsers user = null;
+        if (username != null && !username.isEmpty()) {
+            // 根据用户名获取用户信息
+            user = userService.getByUsername(username);
+        } else {
+            // 根据邮箱获取用户信息
+            LambdaQueryWrapper<SysUsers> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SysUsers::getEmail, email);
+            user = userMapper.selectOne(wrapper);
+        }
+        
         if (user == null) {
             throw new BadCredentialsException("invalid username or password");
         }

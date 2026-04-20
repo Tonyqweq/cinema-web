@@ -371,5 +371,10 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movies> implement
         String tagIdsStr = tagIds.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
         return movieMapper.selectMoviesByTagIds(tagIdsStr);
     }
+
+    @Override
+    public long count() {
+        return super.count();
+    }
 }
 
