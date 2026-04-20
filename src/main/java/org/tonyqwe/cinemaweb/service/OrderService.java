@@ -48,4 +48,14 @@ public interface OrderService {
      * @return 是否成功
      */
     boolean payOrder(Long orderId, Long userId, String paymentMethod);
+
+    /**
+     * 获取订单总数
+     */
+    long count();
+
+    /**
+     * 获取总票房
+     */
+    double getTotalRevenue();
 }

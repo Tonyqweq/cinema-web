@@ -443,4 +443,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
             log.error("更新座位状态失败: showtimeId={}, seats={}, error={}", showtimeId, seatsJson, e.getMessage());
         }
     }
+
+    @Override
+    public long count() {
+        return super.count();
+    }
+
+    @Override
+    public double getTotalRevenue() {
+        // 获取所有已完成订单的总金额
+        LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Orders::getOrderStatus, 1); // 1-已支付
+        List<Orders> orders = orderMapper.selectList(wrapper);
+        
+        double totalRevenue = 0;
+        for (Orders order : orders) {
+            totalRevenue += order.getTotalPrice();
+        }
+        return totalRevenue;
+    }
 }

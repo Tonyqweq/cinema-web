@@ -178,4 +178,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, SysUsers> implement
             return ResponseResult.error("邮箱修改失败");
         }
     }
+
+    @Override
+    public long count() {
+        return super.count();
+    }
 }

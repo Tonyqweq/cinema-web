@@ -100,13 +100,23 @@ public class SessionController {
      * GET /api/sessions/email
      */
     @GetMapping("/sessions/email")
-    public ResponseEntity<ResponseResult<String>> getEmailByUsername(@RequestParam String username) {
-        //System.out.println("获取邮箱请求：用户名 = " + username);
-        String email = authService.getEmailByUsername(username);
-        //System.out.println("获取邮箱结果：邮箱 = " + email);
+    public ResponseEntity<ResponseResult<String>> getEmailByUsername(
+            @RequestParam(required = false) String username) {
+        System.out.println("=== 开始处理获取邮箱请求 ===");
+        System.out.println("请求参数 username: " + username);
+        if (username == null || username.trim().isEmpty()) {
+            System.out.println("=== 用户名为空，返回400错误 ===");
+            return ResponseEntity.badRequest()
+                    .body(ResponseResult.error(400, "用户名不能为空"));
+        }
+        System.out.println("=== 用户名不为空，调用authService.getEmailByUsername ===");
+        String email = authService.getEmailByUsername(username.trim());
+        System.out.println("=== 获取邮箱结果: " + email);
         if (email == null) {
+            System.out.println("=== 邮箱为空，返回404错误 ===");
             return ResponseEntity.ok(ResponseResult.error(404, "用户不存在或邮箱未设置"));
         }
+        System.out.println("=== 邮箱不为空，返回成功 ===");
         return ResponseEntity.ok(ResponseResult.success(email));
     }
 

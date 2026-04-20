@@ -14,12 +14,5 @@ public class WebConfig implements WebMvcConfigurer {
         // 留空或仅注册与安全无关的拦截器
     }
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
+    // CORS 配置已移至 SecurityConfig
 }
