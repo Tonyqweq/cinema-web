@@ -15,6 +15,10 @@ public class HallVO {
     private Integer capacity;
     private Integer status;
     private String statusText;
+    private java.math.BigDecimal priceNormal;
+    private java.math.BigDecimal priceGolden;
+    private java.math.BigDecimal priceVip;
+    private java.math.BigDecimal priceOther;
 
     @JsonProperty("created_at")
     private Date createdAt;

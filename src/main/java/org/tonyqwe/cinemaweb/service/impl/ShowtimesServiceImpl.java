@@ -69,6 +69,10 @@ public class ShowtimesServiceImpl extends ServiceImpl<ShowtimesMapper, Showtimes
         showtimes.setStartTime(showtimesDTO.getStartTime());
         showtimes.setEndTime(showtimesDTO.getEndTime());
         showtimes.setPrice(showtimesDTO.getPrice());
+        showtimes.setPriceNormal(showtimesDTO.getPriceNormal());
+        showtimes.setPriceGolden(showtimesDTO.getPriceGolden());
+        showtimes.setPriceVip(showtimesDTO.getPriceVip());
+        showtimes.setPriceOther(showtimesDTO.getPriceOther());
         showtimes.setStatus(showtimesDTO.getStatus() != null ? showtimesDTO.getStatus() : 1);
 
         if (showtimesDTO.getId() != null) {

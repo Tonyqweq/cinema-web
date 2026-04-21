@@ -218,6 +218,10 @@ public class HallController {
         vo.setType(hall.getType());
         vo.setCapacity(hall.getCapacity());
         vo.setStatus(hall.getStatus());
+        vo.setPriceNormal(hall.getPriceNormal());
+        vo.setPriceGolden(hall.getPriceGolden());
+        vo.setPriceVip(hall.getPriceVip());
+        vo.setPriceOther(hall.getPriceOther());
         vo.setCreatedAt(hall.getCreatedAt());
         vo.setUpdatedAt(hall.getUpdatedAt());
         return vo;

@@ -9,4 +9,8 @@ public class HallDTO {
     private String type;
     private Integer capacity;
     private Integer status;
+    private java.math.BigDecimal priceNormal;
+    private java.math.BigDecimal priceGolden;
+    private java.math.BigDecimal priceVip;
+    private java.math.BigDecimal priceOther;
 }

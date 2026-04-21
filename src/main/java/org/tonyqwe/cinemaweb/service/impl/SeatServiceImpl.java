@@ -111,6 +111,42 @@ public class SeatServiceImpl implements SeatService {
             SeatVO seatVO = toSeatVO(seat);
             Long seatId = seat.getId();
 
+            // 计算该场次的实际价格 (场次特定价格 > 影厅默认价格)
+            java.math.BigDecimal actualPrice = java.math.BigDecimal.ZERO;
+            
+            // 1. 尝试获取场次中设定的特定座位类型价格
+            java.math.BigDecimal showtimeTypePrice = null;
+            switch (seat.getSeatType()) {
+                case 1: showtimeTypePrice = showtime.getPriceNormal(); break;
+                case 2: showtimeTypePrice = showtime.getPriceGolden(); break;
+                case 3: showtimeTypePrice = showtime.getPriceVip(); break;
+                case 4: showtimeTypePrice = showtime.getPriceOther(); break;
+            }
+            
+            if (showtimeTypePrice != null && showtimeTypePrice.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                actualPrice = showtimeTypePrice;
+            } else if (showtime.getPrice() != null && showtime.getPrice().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                // 2. 如果没有特定类型价格，尝试使用场次统一价
+                actualPrice = showtime.getPrice();
+            } else {
+                // 3. 如果场次未设置价格，则使用影厅设定的默认价格
+                org.tonyqwe.cinemaweb.domain.entity.Halls hall = hallMapper.selectById(hallId);
+                if (hall != null) {
+                    switch (seat.getSeatType()) {
+                        case 1: actualPrice = hall.getPriceNormal(); break;
+                        case 2: actualPrice = hall.getPriceGolden(); break;
+                        case 3: actualPrice = hall.getPriceVip(); break;
+                        case 4: actualPrice = hall.getPriceOther(); break;
+                    }
+                }
+                // 4. 最后兜底：使用座位自身的价格
+                if ((actualPrice == null || actualPrice.compareTo(java.math.BigDecimal.ZERO) == 0) && seat.getPrice() != null) {
+                    actualPrice = seat.getPrice();
+                }
+            }
+            
+            seatVO.setPrice(actualPrice != null ? actualPrice : java.math.BigDecimal.ZERO);
+
             // 优先从seat_status表获取状态
             SeatStatus seatStatus = statusMap.get(seatId);
             if (seatStatus != null) {
@@ -238,6 +274,13 @@ public class SeatServiceImpl implements SeatService {
         // 先删除该影厅的所有座位
         deleteSeatsByHallId(hallId);
 
+        // 获取影厅信息，用于设置默认价格
+        org.tonyqwe.cinemaweb.domain.entity.Halls hall = hallMapper.selectById(hallId);
+        java.math.BigDecimal defaultPrice = java.math.BigDecimal.ZERO;
+        if (hall != null && hall.getPriceNormal() != null) {
+            defaultPrice = hall.getPriceNormal();
+        }
+
         // 生成新的座位
         List<SeatDTO> seatDTOs = new ArrayList<>();
         for (int row = 1; row <= rows; row++) {
@@ -250,7 +293,7 @@ public class SeatServiceImpl implements SeatService {
                 seatDTO.setSeatNumber(rowChar + String.valueOf(col));
                 seatDTO.setSeatType(1); // 默认普通座
                 seatDTO.setStatus(1); // 默认可选
-                seatDTO.setPrice(null); // 默认使用影厅统一价格
+                seatDTO.setPrice(defaultPrice); // 默认使用影厅普通座价格
                 seatDTOs.add(seatDTO);
             }
         }
@@ -259,15 +302,30 @@ public class SeatServiceImpl implements SeatService {
         boolean success = batchSaveSeats(seatDTOs);
 
         // 更新影厅的座位数
-        if (success) {
-            org.tonyqwe.cinemaweb.domain.entity.Halls hall = hallMapper.selectById(hallId);
-            if (hall != null) {
-                hall.setCapacity(rows * columns);
-                hallMapper.updateById(hall);
-            }
+        if (success && hall != null) {
+            hall.setCapacity(rows * columns);
+            hallMapper.updateById(hall);
         }
 
         return success;
+    }
+
+    @Override
+    @Transactional
+    public boolean batchUpdateSeats(List<Long> ids, SeatDTO seatDTO) {
+        if (ids == null || ids.isEmpty()) {
+            return false;
+        }
+        for (Long id : ids) {
+            Seats seat = seatMapper.selectById(id);
+            if (seat != null) {
+                if (seatDTO.getSeatType() != null) seat.setSeatType(seatDTO.getSeatType());
+                if (seatDTO.getStatus() != null) seat.setStatus(seatDTO.getStatus());
+                if (seatDTO.getPrice() != null) seat.setPrice(seatDTO.getPrice());
+                seatMapper.updateById(seat);
+            }
+        }
+        return true;
     }
 
     @Override

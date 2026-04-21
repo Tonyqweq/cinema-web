@@ -144,6 +144,32 @@ public class SeatController {
     }
 
     /**
+     * 批量更新座位类型/状态/价格
+     * PUT /api/seats/batch?ids=1,2,3
+     */
+    @PutMapping("/batch")
+    public ResponseEntity<ResponseResult<Void>> batchUpdateSeats(
+            @RequestParam List<Long> ids,
+            @RequestBody SeatDTO seatDTO) {
+        if (ids.isEmpty()) {
+            return ResponseEntity.ok(ResponseResult.error("未选择座位"));
+        }
+        
+        // 检查第一个座位的权限即可（假设都在同一个影厅）
+        var firstSeat = seatService.getSeatById(ids.get(0));
+        if (firstSeat != null && !checkAdminHallAccess(firstSeat.getHallId())) {
+            return ResponseEntity.ok(ResponseResult.error("无权操作这些座位的影厅"));
+        }
+        
+        boolean success = seatService.batchUpdateSeats(ids, seatDTO);
+        if (success) {
+            return ResponseEntity.ok(ResponseResult.success());
+        } else {
+            return ResponseEntity.ok(ResponseResult.error("批量更新失败"));
+        }
+    }
+
+    /**
      * 删除座位
      * DELETE /api/seats/{id}
      */

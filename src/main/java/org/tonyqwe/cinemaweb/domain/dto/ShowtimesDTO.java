@@ -47,6 +47,26 @@ public class ShowtimesDTO {
     private BigDecimal price;
 
     /**
+     * 普通座价格
+     */
+    private BigDecimal priceNormal;
+
+    /**
+     * 黄金座价格
+     */
+    private BigDecimal priceGolden;
+
+    /**
+     * VIP座价格
+     */
+    private BigDecimal priceVip;
+
+    /**
+     * 其他座价格
+     */
+    private BigDecimal priceOther;
+
+    /**
      * 状态：1=正常，0=取消
      */
     private Integer status;
