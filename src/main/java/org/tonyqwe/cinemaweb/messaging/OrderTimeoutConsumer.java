@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.tonyqwe.cinemaweb.config.RabbitMQConfig;
 import org.tonyqwe.cinemaweb.domain.entity.Orders;
-import org.tonyqwe.cinemaweb.domain.entity.SeatStatus;
 import org.tonyqwe.cinemaweb.mapper.OrderMapper;
 import org.tonyqwe.cinemaweb.mapper.SeatStatusMapper;
 import org.tonyqwe.cinemaweb.websocket.SeatWebSocketHandler;

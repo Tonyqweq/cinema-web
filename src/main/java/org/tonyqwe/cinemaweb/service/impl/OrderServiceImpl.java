@@ -28,8 +28,11 @@ import org.tonyqwe.cinemaweb.utils.RedisLockUtil;
 import org.tonyqwe.cinemaweb.websocket.SeatWebSocketHandler;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -455,11 +458,114 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
         LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Orders::getOrderStatus, 1); // 1-已支付
         List<Orders> orders = orderMapper.selectList(wrapper);
-        
+
         double totalRevenue = 0;
         for (Orders order : orders) {
             totalRevenue += order.getTotalPrice();
         }
         return totalRevenue;
+    }
+
+    @Override
+    public List<Map<String, Object>> getMonthlyRevenue(int months) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        SimpleDateFormat monthFormat = new SimpleDateFormat("yyyy-MM");
+
+        for (int i = months - 1; i >= 0; i--) {
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.MONTH, -i);
+            String monthStr = monthFormat.format(cal.getTime());
+            String monthLabel = (cal.get(Calendar.MONTH) + 1) + "月";
+
+            // 查询该月的已支付订单
+            LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Orders::getOrderStatus, 1);
+            wrapper.likeRight(Orders::getCreatedAt, monthStr);
+            List<Orders> orders = orderMapper.selectList(wrapper);
+
+            double monthlyRevenue = 0;
+            for (Orders order : orders) {
+                monthlyRevenue += order.getTotalPrice();
+            }
+
+            Map<String, Object> monthData = new HashMap<>();
+            monthData.put("month", monthLabel);
+            monthData.put("revenue", monthlyRevenue);
+            result.add(monthData);
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<Map<String, Object>> getOrderStatusStats() {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        // 已完成
+        LambdaQueryWrapper<Orders> wrapper1 = new LambdaQueryWrapper<>();
+        wrapper1.eq(Orders::getOrderStatus, 1);
+        long completed = orderMapper.selectCount(wrapper1);
+        result.add(Map.of("name", "已完成", "value", completed));
+
+        // 待支付
+        LambdaQueryWrapper<Orders> wrapper2 = new LambdaQueryWrapper<>();
+        wrapper2.eq(Orders::getOrderStatus, 0);
+        long pending = orderMapper.selectCount(wrapper2);
+        result.add(Map.of("name", "待支付", "value", pending));
+
+        // 已取消
+        LambdaQueryWrapper<Orders> wrapper3 = new LambdaQueryWrapper<>();
+        wrapper3.eq(Orders::getOrderStatus, 3);
+        long cancelled = orderMapper.selectCount(wrapper3);
+        result.add(Map.of("name", "已取消", "value", cancelled));
+
+        return result;
+    }
+
+    @Override
+    public List<Map<String, Object>> getPopularMovies(int limit) {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        // 获取所有已支付的订单
+        LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Orders::getOrderStatus, 1);
+        List<Orders> orders = orderMapper.selectList(wrapper);
+
+        // 按电影分组统计票房
+        Map<Long, Double> movieRevenueMap = new HashMap<>();
+        Map<Long, String> movieNameMap = new HashMap<>();
+
+        for (Orders order : orders) {
+            Showtimes showtime = showtimesMapper.selectById(order.getShowtimeId());
+            if (showtime != null) {
+                Long movieId = showtime.getMovieId();
+                movieRevenueMap.merge(movieId, order.getTotalPrice(), Double::sum);
+
+                if (!movieNameMap.containsKey(movieId)) {
+                    Movies movie = movieMapper.selectById(movieId);
+                    if (movie != null) {
+                        movieNameMap.put(movieId, movie.getTitle());
+                    }
+                }
+            }
+        }
+
+        // 按票房排序
+        List<Map.Entry<Long, Double>> sortedEntries = new ArrayList<>(movieRevenueMap.entrySet());
+        sortedEntries.sort((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()));
+
+        // 取前limit个
+        int count = 0;
+        for (Map.Entry<Long, Double> entry : sortedEntries) {
+            if (count >= limit) break;
+
+            Map<String, Object> movieData = new HashMap<>();
+            movieData.put("name", movieNameMap.getOrDefault(entry.getKey(), "未知电影"));
+            movieData.put("revenue", entry.getValue());
+            result.add(movieData);
+            count++;
+        }
+
+        return result;
     }
 }

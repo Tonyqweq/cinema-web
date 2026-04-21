@@ -4,9 +4,6 @@ import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.tonyqwe.cinemaweb.domain.entity.Orders;
-import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
-import org.tonyqwe.cinemaweb.domain.entity.SysUserRole;
 import org.tonyqwe.cinemaweb.service.MovieService;
 import org.tonyqwe.cinemaweb.service.OrderService;
 import org.tonyqwe.cinemaweb.service.UserRoleService;
@@ -65,18 +62,19 @@ public class DashboardController {
      */
     @GetMapping("/revenue-trend")
     public ResponseResult<?> getRevenueTrend() {
-        // 模拟6个月的票房数据
-        List<Integer> revenueData = new ArrayList<>();
-        revenueData.add(120000);
-        revenueData.add(190000);
-        revenueData.add(300000);
-        revenueData.add(278000);
-        revenueData.add(480000);
-        revenueData.add(590000);
+        List<Map<String, Object>> monthlyData = orderService.getMonthlyRevenue(6);
+
+        List<String> months = new ArrayList<>();
+        List<Double> revenue = new ArrayList<>();
+
+        for (Map<String, Object> data : monthlyData) {
+            months.add((String) data.get("month"));
+            revenue.add((Double) data.get("revenue"));
+        }
 
         Map<String, Object> trend = new HashMap<>();
-        trend.put("months", List.of("1月", "2月", "3月", "4月", "5月", "6月"));
-        trend.put("revenue", revenueData);
+        trend.put("months", months);
+        trend.put("revenue", revenue);
 
         return ResponseResult.success(trend);
     }
@@ -86,12 +84,8 @@ public class DashboardController {
      */
     @GetMapping("/user-distribution")
     public ResponseResult<?> getUserDistribution() {
-        // 模拟用户类型分布
-        List<Map<String, Object>> distribution = new ArrayList<>();
-        distribution.add(Map.of("name", "普通用户", "value", 8000));
-        distribution.add(Map.of("name", "VIP用户", "value", 3000));
-        distribution.add(Map.of("name", "管理员", "value", 1000));
-        distribution.add(Map.of("name", "员工", "value", 345));
+        // 获取用户角色分布
+        List<Map<String, Object>> distribution = userRoleService.getUserDistribution();
 
         return ResponseResult.success(distribution);
     }
@@ -101,12 +95,7 @@ public class DashboardController {
      */
     @GetMapping("/order-status")
     public ResponseResult<?> getOrderStatus() {
-        // 模拟订单状态分布
-        List<Map<String, Object>> status = new ArrayList<>();
-        status.add(Map.of("name", "已完成", "value", 4000));
-        status.add(Map.of("name", "待支付", "value", 1000));
-        status.add(Map.of("name", "已取消", "value", 500));
-        status.add(Map.of("name", "退款中", "value", 178));
+        List<Map<String, Object>> status = orderService.getOrderStatusStats();
 
         return ResponseResult.success(status);
     }
@@ -116,13 +105,7 @@ public class DashboardController {
      */
     @GetMapping("/popular-movies")
     public ResponseResult<?> getPopularMovies() {
-        // 模拟热门电影数据
-        List<Map<String, Object>> movies = new ArrayList<>();
-        movies.add(Map.of("name", "电影A", "revenue", 350000));
-        movies.add(Map.of("name", "电影B", "revenue", 280000));
-        movies.add(Map.of("name", "电影C", "revenue", 220000));
-        movies.add(Map.of("name", "电影D", "revenue", 180000));
-        movies.add(Map.of("name", "电影E", "revenue", 150000));
+        List<Map<String, Object>> movies = orderService.getPopularMovies(5);
 
         return ResponseResult.success(movies);
     }

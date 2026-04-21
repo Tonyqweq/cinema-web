@@ -25,11 +25,11 @@ public class Seats {
 
     private String seatNumber; // 座位号（如A1、A2、B1等）
 
-    private Integer seatType; // 座位类型：1=普通座，2=VIP座，3=情侣座，4=轮椅座
+    private Integer seatType; // 座位类型：1=普通座，2=黄金座，3=VIP座，4=其他
 
     private Integer status; // 座位状态：1=可选，2=已售，3=已锁定，4=维修中
 
-    private java.math.BigDecimal price; // 座位价格（可选，如果影厅统一价格则为null）
+    private java.math.BigDecimal price; // 座位价格
 
     @JsonProperty("created_at")
     @TableField("created_at")

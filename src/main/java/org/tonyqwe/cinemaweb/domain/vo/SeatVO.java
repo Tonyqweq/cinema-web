@@ -28,9 +28,9 @@ public class SeatVO {
     public String getSeatTypeText() {
         switch (seatType) {
             case 1: return "普通座";
-            case 2: return "VIP座";
-            case 3: return "情侣座";
-            case 4: return "轮椅座";
+            case 2: return "黄金座";
+            case 3: return "VIP座";
+            case 4: return "其他";
             default: return "未知";
         }
     }

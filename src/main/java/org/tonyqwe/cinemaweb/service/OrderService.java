@@ -58,4 +58,24 @@ public interface OrderService {
      * 获取总票房
      */
     double getTotalRevenue();
+
+    /**
+     * 按月获取票房统计
+     * @param months 月份数
+     * @return 每月票房列表
+     */
+    java.util.List<java.util.Map<String, Object>> getMonthlyRevenue(int months);
+
+    /**
+     * 按状态获取订单统计
+     * @return 各状态订单数量
+     */
+    java.util.List<java.util.Map<String, Object>> getOrderStatusStats();
+
+    /**
+     * 获取热门电影
+     * @param limit 返回数量
+     * @return 热门电影列表
+     */
+    java.util.List<java.util.Map<String, Object>> getPopularMovies(int limit);
 }

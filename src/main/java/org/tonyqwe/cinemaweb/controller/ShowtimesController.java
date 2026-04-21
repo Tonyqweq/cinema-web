@@ -216,6 +216,10 @@ public class ShowtimesController {
         vo.setStartTime(showtimes.getStartTime());
         vo.setEndTime(showtimes.getEndTime());
         vo.setPrice(showtimes.getPrice());
+        vo.setPriceNormal(showtimes.getPriceNormal());
+        vo.setPriceGolden(showtimes.getPriceGolden());
+        vo.setPriceVip(showtimes.getPriceVip());
+        vo.setPriceOther(showtimes.getPriceOther());
         vo.setStatus(showtimes.getStatus());
         vo.setCreatedAt(showtimes.getCreatedAt());
         vo.setUpdatedAt(showtimes.getUpdatedAt());

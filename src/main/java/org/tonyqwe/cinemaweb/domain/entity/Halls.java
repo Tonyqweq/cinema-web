@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -26,6 +25,14 @@ public class Halls {
     private Integer capacity; // 座位数
 
     private Integer status; // 状态：1=正常营业，0=暂停营业
+
+    private java.math.BigDecimal priceNormal; // 普通座价格
+
+    private java.math.BigDecimal priceGolden; // 黄金座价格
+
+    private java.math.BigDecimal priceVip; // VIP座价格
+
+    private java.math.BigDecimal priceOther; // 其他座价格
 
     @JsonProperty("created_at")
     @TableField("created_at")

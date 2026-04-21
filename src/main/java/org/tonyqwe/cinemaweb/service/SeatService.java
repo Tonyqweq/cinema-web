@@ -49,6 +49,11 @@ public interface SeatService {
     boolean generateSeats(Long hallId, int rows, int columns);
 
     /**
+     * 批量更新座位
+     */
+    boolean batchUpdateSeats(List<Long> ids, SeatDTO seatDTO);
+
+    /**
      * 根据ID获取座位
      */
     Seats getSeatById(Long id);

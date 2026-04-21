@@ -1,7 +1,6 @@
 package org.tonyqwe.cinemaweb.config;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 将 sys_roles.name 转为 Spring Security 使用的权限串（ROLE_ 前缀）。
