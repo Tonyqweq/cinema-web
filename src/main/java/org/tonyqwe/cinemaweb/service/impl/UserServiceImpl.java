@@ -3,6 +3,7 @@ package org.tonyqwe.cinemaweb.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +20,7 @@ import org.tonyqwe.cinemaweb.utils.ResponseResult;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, SysUsers> implements UserService {
 

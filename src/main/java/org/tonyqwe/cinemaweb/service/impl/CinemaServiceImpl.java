@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.tonyqwe.cinemaweb.domain.entity.Cinemas;
 import org.tonyqwe.cinemaweb.mapper.CinemaMapper;
 import org.tonyqwe.cinemaweb.service.CinemaService;
 
+@Slf4j
 @Service
 public class CinemaServiceImpl extends ServiceImpl<CinemaMapper, Cinemas> implements CinemaService {
 

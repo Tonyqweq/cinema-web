@@ -81,9 +81,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Orders createOrder(OrderRequest request, Long userId) {
+        log.info("开始创建订单，用户ID: {}, 场次ID: {}, 座位: {}", userId, request.getShowtimeId(), request.getSeats());
+        
         // 1. 验证场次是否存在
         Showtimes showtime = showtimesMapper.selectById(request.getShowtimeId());
         if (showtime == null) {
+            log.error("场次不存在，场次ID: {}", request.getShowtimeId());
             throw new RuntimeException("场次不存在");
         }
 
@@ -276,9 +279,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean cancelOrder(Long orderId, Long userId) {
+        log.info("开始取消订单，订单ID: {}, 用户ID: {}", orderId, userId);
+        
         // 1. 验证订单是否存在
         Orders order = orderMapper.selectById(orderId);
         if (order == null) {
+            log.error("订单不存在，订单ID: {}", orderId);
             throw new RuntimeException("订单不存在");
         }
 
@@ -327,9 +333,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean payOrder(Long orderId, Long userId, String paymentMethod) {
+        log.info("开始支付订单，订单ID: {}, 用户ID: {}, 支付方式: {}", orderId, userId, paymentMethod);
+        
         // 1. 验证订单是否存在
         Orders order = orderMapper.selectById(orderId);
         if (order == null) {
+            log.error("订单不存在，订单ID: {}", orderId);
             throw new RuntimeException("订单不存在");
         }
 
@@ -469,18 +478,28 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
     @Override
     public List<Map<String, Object>> getMonthlyRevenue(int months) {
         List<Map<String, Object>> result = new ArrayList<>();
-        SimpleDateFormat monthFormat = new SimpleDateFormat("yyyy-MM");
 
         for (int i = months - 1; i >= 0; i--) {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MONTH, -i);
-            String monthStr = monthFormat.format(cal.getTime());
-            String monthLabel = (cal.get(Calendar.MONTH) + 1) + "月";
+            cal.set(Calendar.DAY_OF_MONTH, 1);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            
+            Date startDate = cal.getTime();
+            
+            cal.add(Calendar.MONTH, 1);
+            cal.add(Calendar.SECOND, -1);
+            Date endDate = cal.getTime();
+            
+            String monthLabel = (cal.get(Calendar.MONTH)) + "月";
 
             // 查询该月的已支付订单
             LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(Orders::getOrderStatus, 1);
-            wrapper.likeRight(Orders::getCreatedAt, monthStr);
+            wrapper.between(Orders::getCreatedAt, startDate, endDate);
             List<Orders> orders = orderMapper.selectList(wrapper);
 
             double monthlyRevenue = 0;
