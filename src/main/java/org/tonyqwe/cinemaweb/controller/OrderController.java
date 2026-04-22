@@ -2,6 +2,7 @@ package org.tonyqwe.cinemaweb.controller;
 
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.dto.OrderRequest;
@@ -16,6 +17,7 @@ import java.util.Map;
 /**
  * 订单控制器
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {

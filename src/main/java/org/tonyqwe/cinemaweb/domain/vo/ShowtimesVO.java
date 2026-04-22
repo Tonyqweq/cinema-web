@@ -27,6 +27,11 @@ public class ShowtimesVO {
     private String cinemaName;
 
     /**
+     * 影院地址
+     */
+    private String cinemaAddress;
+
+    /**
      * 影厅ID
      */
     private Long hallId;

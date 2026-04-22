@@ -224,10 +224,11 @@ public class ShowtimesController {
         vo.setCreatedAt(showtimes.getCreatedAt());
         vo.setUpdatedAt(showtimes.getUpdatedAt());
 
-        // 设置影院名称
+        // 设置影院名称和地址
         Cinemas cinema = cinemaService.getCinemaById(showtimes.getCinemaId());
         if (cinema != null) {
             vo.setCinemaName(cinema.getName());
+            vo.setCinemaAddress(cinema.getAddress());
         }
 
         // 设置影厅名称
