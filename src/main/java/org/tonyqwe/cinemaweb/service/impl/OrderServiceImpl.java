@@ -197,7 +197,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
         wrapper.orderByDesc(Orders::getCreatedAt);
         List<Orders> orders = orderMapper.selectList(wrapper);
         
-        // 为每个订单添加电影名、影院名、影厅名和放映时间
+        // 为每个订单添加电影名、影院名、影厅名、放映时间和座位名称
         for (Orders order : orders) {
             Showtimes showtime = showtimesMapper.selectById(order.getShowtimeId());
             if (showtime != null) {
@@ -230,6 +230,30 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
                 String startTime = dateFormat.format(showtime.getStartTime());
                 String endTime = dateFormat.format(showtime.getEndTime());
                 order.setShowtimeTime(startTime + "-" + endTime);
+            }
+            
+            // 获取座位名称列表
+            if (order.getSeats() != null && !order.getSeats().isEmpty()) {
+                try {
+                    // 解析座位ID列表
+                    String cleanJson = order.getSeats().replace("[", "").replace("]", "").replace(" ", "");
+                    List<Long> seatIds = new ArrayList<>();
+                    for (String seatIdStr : cleanJson.split(",")) {
+                        if (!seatIdStr.isEmpty()) {
+                            seatIds.add(Long.parseLong(seatIdStr));
+                        }
+                    }
+                    
+                    // 查询座位信息
+                    List<Seats> seats = seatMapper.selectBatchIds(seatIds);
+                    List<String> seatNames = new ArrayList<>();
+                    for (Seats seat : seats) {
+                        seatNames.add(seat.getSeatNumber());
+                    }
+                    order.setSeatNames(seatNames);
+                } catch (Exception e) {
+                    log.error("解析座位信息失败: orderId={}, seats={}, error={}", order.getId(), order.getSeats(), e.getMessage());
+                }
             }
         }
         

@@ -32,6 +32,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -358,11 +359,19 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movies> implement
     }
     
     @Override
-    public Double getMovieRating(Long movieId) {
+    public void updateMovieRating(Long movieId) {
         if (movieId == null) {
-            return null;
+            return;
         }
-        return movieReviewMapper.getAverageRatingByMovieId(movieId);
+        
+        Double averageRating = movieReviewMapper.getAverageRatingByMovieId(movieId);
+        if (averageRating != null) {
+            Movies movie = movieMapper.selectById(movieId);
+            if (movie != null) {
+                movie.setRating(averageRating);
+                movieMapper.updateById(movie);
+            }
+        }
     }
 
     @Override
@@ -377,6 +386,35 @@ public class MovieServiceImpl extends ServiceImpl<MovieMapper, Movies> implement
     @Override
     public long count() {
         return super.count();
+    }
+
+    @Override
+    public Integer getMovieReviewCount(Long movieId) {
+        if (movieId == null) {
+            return 0;
+        }
+        return movieReviewMapper.getReviewCountByMovieId(movieId);
+    }
+
+    /**
+     * 初始化所有电影的评分（一次性操作）
+     */
+    public void initializeAllMovieRatings() {
+        log.info("开始初始化所有电影评分...");
+        List<Movies> allMovies = movieMapper.selectList(new LambdaQueryWrapper<>());
+        int updatedCount = 0;
+        
+        for (Movies movie : allMovies) {
+            Double averageRating = movieReviewMapper.getAverageRatingByMovieId(movie.getId());
+            if (averageRating != null && !averageRating.equals(movie.getRating())) {
+                movie.setRating(averageRating);
+                movieMapper.updateById(movie);
+                updatedCount++;
+                log.info("更新电影 '{}' 评分为：{}", movie.getTitle(), averageRating);
+            }
+        }
+        
+        log.info("初始化完成，共更新 {} 部电影的评分", updatedCount);
     }
 }
 

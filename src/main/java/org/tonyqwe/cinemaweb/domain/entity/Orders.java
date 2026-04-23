@@ -111,4 +111,10 @@ public class Orders {
      */
     @TableField(exist = false)
     private String hallName;
+
+    /**
+     * 座位名称列表（非数据库字段）
+     */
+    @TableField(exist = false)
+    private List<String> seatNames;
 }

@@ -347,4 +347,196 @@ public class SeatServiceImpl implements SeatService {
         vo.setUpdatedAt(seat.getUpdatedAt());
         return vo;
     }
+
+    @Override
+    @Transactional
+    public boolean lockSeats(Long showtimeId, List<Long> seatIds) {
+        if (showtimeId == null || seatIds == null || seatIds.isEmpty()) {
+            return false;
+        }
+
+        Date now = new Date();
+        Date lockExpireTime = new Date(now.getTime() + 15 * 60 * 1000); // 15分钟锁定时间
+
+        // 获取订单信息作为备用（兼容旧数据）
+        LambdaQueryWrapper<Orders> orderWrapper = new LambdaQueryWrapper<>();
+        orderWrapper.eq(Orders::getShowtimeId, showtimeId);
+        orderWrapper.in(Orders::getOrderStatus, 0, 1); // 0-待支付，1-已支付
+        List<Orders> orders = orderMapper.selectList(orderWrapper);
+
+        java.util.Set<Long> occupiedSeatIds = new java.util.HashSet<>();
+        for (Orders order : orders) {
+            String seatsStr = order.getSeats();
+            if (seatsStr != null && !seatsStr.isEmpty()) {
+                try {
+                    seatsStr = seatsStr.substring(1, seatsStr.length() - 1);
+                    String[] seatIdStrs = seatsStr.split(",");
+                    for (String seatIdStr : seatIdStrs) {
+                        if (!seatIdStr.isEmpty()) {
+                            Long seatId = Long.parseLong(seatIdStr.trim());
+                            occupiedSeatIds.add(seatId);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("解析订单座位信息失败: orderId={}, seats={}", order.getId(), seatsStr, e);
+                }
+            }
+        }
+
+        for (Long seatId : seatIds) {
+            // 检查座位是否已被锁定或售出
+            LambdaQueryWrapper<SeatStatus> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SeatStatus::getShowtimeId, showtimeId);
+            wrapper.eq(SeatStatus::getSeatId, seatId);
+            wrapper.in(SeatStatus::getStatus, 1, 2); // 1-锁定, 2-售出
+            List<SeatStatus> existingStatuses = seatStatusMapper.selectList(wrapper);
+
+            boolean isAvailable = true;
+            if (!existingStatuses.isEmpty()) {
+                // 检查锁定是否已过期
+                SeatStatus existingStatus = existingStatuses.get(0);
+                if (existingStatus.getStatus() == 1 && existingStatus.getLockExpireTime() != null) {
+                    if (existingStatus.getLockExpireTime().after(now)) {
+                        // 锁定未过期，不能重复锁定
+                        isAvailable = false;
+                    }
+                } else if (existingStatus.getStatus() == 2) {
+                    // 已售出，不能锁定
+                    isAvailable = false;
+                }
+            } else if (occupiedSeatIds.contains(seatId)) {
+                // 兼容旧数据：从订单信息判断
+                isAvailable = false;
+            }
+
+            if (!isAvailable) {
+                return false;
+            }
+
+            // 创建或更新座位锁定状态
+            SeatStatus seatStatus = new SeatStatus();
+            seatStatus.setShowtimeId(showtimeId);
+            seatStatus.setSeatId(seatId);
+            seatStatus.setStatus(1); // 1-锁定
+            seatStatus.setLockExpireTime(lockExpireTime);
+            seatStatus.setCreatedAt(now);
+            seatStatus.setUpdatedAt(now);
+
+            // 尝试插入，如果已存在则更新
+            try {
+                if (existingStatuses.isEmpty()) {
+                    seatStatusMapper.insert(seatStatus);
+                } else {
+                    seatStatus.setId(existingStatuses.get(0).getId());
+                    seatStatusMapper.updateById(seatStatus);
+                }
+            } catch (Exception e) {
+                log.error("锁定座位失败: showtimeId={}, seatId={}", showtimeId, seatId, e);
+                return false;
+            }
+        }
+
+        log.info("成功锁定座位: showtimeId={}, seatIds={}", showtimeId, seatIds);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean unlockSeats(Long showtimeId, List<Long> seatIds) {
+        if (showtimeId == null || seatIds == null || seatIds.isEmpty()) {
+            return false;
+        }
+
+        for (Long seatId : seatIds) {
+            LambdaQueryWrapper<SeatStatus> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SeatStatus::getShowtimeId, showtimeId);
+            wrapper.eq(SeatStatus::getSeatId, seatId);
+            wrapper.eq(SeatStatus::getStatus, 1); // 只解锁锁定状态的座位
+
+            int deleted = seatStatusMapper.delete(wrapper);
+            if (deleted == 0) {
+                log.warn("解锁座位失败: showtimeId={}, seatId={}", showtimeId, seatId);
+            }
+        }
+
+        log.info("成功解锁座位: showtimeId={}, seatIds={}", showtimeId, seatIds);
+        return true;
+    }
+
+    @Override
+    public java.util.Map<String, Object> checkSeatsLockable(Long showtimeId, List<Long> seatIds) {
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        java.util.List<Long> lockableSeats = new java.util.ArrayList<>();
+        java.util.List<Long> unavailableSeats = new java.util.ArrayList<>();
+
+        if (showtimeId == null || seatIds == null || seatIds.isEmpty()) {
+            result.put("lockable", false);
+            result.put("lockableSeats", lockableSeats);
+            result.put("unavailableSeats", unavailableSeats);
+            return result;
+        }
+
+        Date now = new Date();
+
+        // 获取订单信息作为备用（兼容旧数据）
+        LambdaQueryWrapper<Orders> orderWrapper = new LambdaQueryWrapper<>();
+        orderWrapper.eq(Orders::getShowtimeId, showtimeId);
+        orderWrapper.in(Orders::getOrderStatus, 0, 1); // 0-待支付，1-已支付
+        List<Orders> orders = orderMapper.selectList(orderWrapper);
+
+        java.util.Set<Long> occupiedSeatIds = new java.util.HashSet<>();
+        for (Orders order : orders) {
+            String seatsStr = order.getSeats();
+            if (seatsStr != null && !seatsStr.isEmpty()) {
+                try {
+                    seatsStr = seatsStr.substring(1, seatsStr.length() - 1);
+                    String[] seatIdStrs = seatsStr.split(",");
+                    for (String seatIdStr : seatIdStrs) {
+                        if (!seatIdStr.isEmpty()) {
+                            Long seatId = Long.parseLong(seatIdStr.trim());
+                            occupiedSeatIds.add(seatId);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("解析订单座位信息失败: orderId={}, seats={}", order.getId(), seatsStr, e);
+                }
+            }
+        }
+
+        for (Long seatId : seatIds) {
+            LambdaQueryWrapper<SeatStatus> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SeatStatus::getShowtimeId, showtimeId);
+            wrapper.eq(SeatStatus::getSeatId, seatId);
+            wrapper.in(SeatStatus::getStatus, 1, 2); // 1-锁定, 2-售出
+            List<SeatStatus> existingStatuses = seatStatusMapper.selectList(wrapper);
+
+            boolean isAvailable = true;
+            if (!existingStatuses.isEmpty()) {
+                SeatStatus existingStatus = existingStatuses.get(0);
+                if (existingStatus.getStatus() == 1 && existingStatus.getLockExpireTime() != null) {
+                    if (existingStatus.getLockExpireTime().after(now)) {
+                        // 锁定未过期
+                        isAvailable = false;
+                    }
+                } else if (existingStatus.getStatus() == 2) {
+                    // 已售出
+                    isAvailable = false;
+                }
+            } else if (occupiedSeatIds.contains(seatId)) {
+                // 兼容旧数据：从订单信息判断
+                isAvailable = false;
+            }
+
+            if (isAvailable) {
+                lockableSeats.add(seatId);
+            } else {
+                unavailableSeats.add(seatId);
+            }
+        }
+
+        result.put("lockable", unavailableSeats.isEmpty());
+        result.put("lockableSeats", lockableSeats);
+        result.put("unavailableSeats", unavailableSeats);
+        return result;
+    }
 }

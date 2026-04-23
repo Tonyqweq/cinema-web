@@ -49,7 +49,7 @@ public interface SeatService {
     boolean generateSeats(Long hallId, int rows, int columns);
 
     /**
-     * 批量更新座位
+     * 批量更新座位类型/状态/价格
      */
     boolean batchUpdateSeats(List<Long> ids, SeatDTO seatDTO);
 
@@ -57,4 +57,19 @@ public interface SeatService {
      * 根据ID获取座位
      */
     Seats getSeatById(Long id);
+
+    /**
+     * 锁定座位
+     */
+    boolean lockSeats(Long showtimeId, List<Long> seatIds);
+
+    /**
+     * 解锁座位
+     */
+    boolean unlockSeats(Long showtimeId, List<Long> seatIds);
+
+    /**
+     * 检查座位是否可锁定
+     */
+    java.util.Map<String, Object> checkSeatsLockable(Long showtimeId, List<Long> seatIds);
 }

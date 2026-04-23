@@ -43,7 +43,9 @@ public class SecurityConfig {
                         // 图片代理接口：允许匿名访问
                         .requestMatchers("/api/movies/proxy-image").permitAll()
                         // 电影列表和标签筛选：允许匿名访问
-                        .requestMatchers("/api/movies", "/api/movies/filters").permitAll()
+                        .requestMatchers("/api/movies", "/api/movies/filters", "/api/movies/home", "/api/movies/init-ratings").permitAll()
+                        // 座位状态接口：允许匿名访问
+                        .requestMatchers("/api/seats/showtime").permitAll()
                         // 影院模块：允许所有已认证用户访问
                         .requestMatchers("/api/cinemas/**").authenticated()
                         // 影厅模块：允许所有已认证用户访问
@@ -55,10 +57,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/wallet/**").authenticated()
                         // 用户昵称修改：允许所有已认证用户访问
                         .requestMatchers("/api/admin/users/nickname").authenticated()
-                        // 用户模块（其他接口）：仅允许管理员访问
+                        // 用户模块：允许所有已认证用户访问（包括收藏功能）
                         .requestMatchers("/api/users/**", "/admin/users/**", "/api/admin/users/**")
-                        .hasAnyAuthority(SecurityExpressions.toRoleAuthorities(
-                                appProperties.getSecurity().getUserApiRoles()))
+                        .authenticated()
                         // 设置模块：允许所有已认证用户访问
                         .requestMatchers("/api/settings/**").authenticated()
                         // 示例与其它已登录接口：任意已认证用户

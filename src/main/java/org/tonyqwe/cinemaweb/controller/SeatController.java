@@ -234,4 +234,64 @@ public class SeatController {
             return ResponseEntity.ok(ResponseResult.error("删除失败"));
         }
     }
+
+    /**
+     * 锁定座位
+     * POST /api/seats/lock
+     */
+    @PostMapping("/lock")
+    public ResponseEntity<ResponseResult<Void>> lockSeats(@RequestBody java.util.Map<String, Object> request) {
+        Long showtimeId = ((Number) request.get("showtimeId")).longValue();
+        @SuppressWarnings("unchecked")
+        List<?> seatIdsRaw = (List<?>) request.get("seatIds");
+        List<Long> seatIds = new java.util.ArrayList<>();
+        for (Object id : seatIdsRaw) {
+            if (id instanceof Number) {
+                seatIds.add(((Number) id).longValue());
+            } else if (id instanceof String) {
+                seatIds.add(Long.parseLong((String) id));
+            }
+        }
+        boolean success = seatService.lockSeats(showtimeId, seatIds);
+        if (success) {
+            return ResponseEntity.ok(ResponseResult.success());
+        } else {
+            return ResponseEntity.ok(ResponseResult.error("锁定座位失败"));
+        }
+    }
+
+    /**
+     * 解锁座位
+     * POST /api/seats/unlock
+     */
+    @PostMapping("/unlock")
+    public ResponseEntity<ResponseResult<Void>> unlockSeats(@RequestBody java.util.Map<String, Object> request) {
+        Long showtimeId = ((Number) request.get("showtimeId")).longValue();
+        @SuppressWarnings("unchecked")
+        List<?> seatIdsRaw = (List<?>) request.get("seatIds");
+        List<Long> seatIds = new java.util.ArrayList<>();
+        for (Object id : seatIdsRaw) {
+            if (id instanceof Number) {
+                seatIds.add(((Number) id).longValue());
+            } else if (id instanceof String) {
+                seatIds.add(Long.parseLong((String) id));
+            }
+        }
+        boolean success = seatService.unlockSeats(showtimeId, seatIds);
+        if (success) {
+            return ResponseEntity.ok(ResponseResult.success());
+        } else {
+            return ResponseEntity.ok(ResponseResult.error("解锁座位失败"));
+        }
+    }
+
+    /**
+     * 检查座位是否可锁定
+     * GET /api/seats/check-lock
+     */
+    @GetMapping("/check-lock")
+    public ResponseEntity<ResponseResult<java.util.Map<String, Object>>> checkSeatsLockable(@RequestParam Long showtimeId, @RequestParam List<Long> seatIds) {
+        java.util.Map<String, Object> result = seatService.checkSeatsLockable(showtimeId, seatIds);
+        return ResponseEntity.ok(ResponseResult.success(result));
+    }
 }
