@@ -60,8 +60,8 @@ public class ShowtimesController {
             @RequestParam(required = false) Long movieId) {
 
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色只能查看绑定影院的排片
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能查看绑定影院的排片
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -103,8 +103,8 @@ public class ShowtimesController {
         }
 
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色只能查看绑定影院的排片
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能查看绑定影院的排片
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -126,8 +126,8 @@ public class ShowtimesController {
     @PostMapping
     public ResponseEntity<ResponseResult<Void>> saveShowtimes(@RequestBody ShowtimesDTO showtimesDTO) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色只能添加绑定影院的排片
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能添加绑定影院的排片
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -182,8 +182,8 @@ public class ShowtimesController {
         }
 
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色只能删除绑定影院的排片
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能删除绑定影院的排片
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);

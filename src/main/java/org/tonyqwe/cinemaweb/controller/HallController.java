@@ -45,8 +45,8 @@ public class HallController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // ADMIN角色只能查看绑定影院的影厅
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能查看绑定影院的影厅
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -86,8 +86,8 @@ public class HallController {
         }
         
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // ADMIN角色只能查看绑定影院的影厅
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能查看绑定影院的影厅
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -110,8 +110,8 @@ public class HallController {
     @PostMapping
     public ResponseEntity<ResponseResult<Void>> addHall(@RequestBody HallDTO hallDTO) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // ADMIN角色只能添加绑定影院的影厅
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能添加绑定影院的影厅
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -139,8 +139,8 @@ public class HallController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> updateHall(@PathVariable Long id, @RequestBody HallDTO hallDTO) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // ADMIN角色只能修改绑定影院的影厅
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能修改绑定影院的影厅
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -176,8 +176,8 @@ public class HallController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> deleteHall(@PathVariable Long id) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // ADMIN角色只能删除绑定影院的影厅
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能删除绑定影院的影厅
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);

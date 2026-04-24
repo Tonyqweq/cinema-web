@@ -78,4 +78,17 @@ public interface OrderService {
      * @return 热门电影列表
      */
     java.util.List<java.util.Map<String, Object>> getPopularMovies(int limit);
+
+    /**
+     * 获取所有订单
+     * @return 订单列表
+     */
+    List<Orders> getAllOrders();
+
+    /**
+     * 根据影院ID获取订单
+     * @param cinemaId 影院ID
+     * @return 订单列表
+     */
+    List<Orders> getOrdersByCinemaId(Long cinemaId);
 }

@@ -35,8 +35,8 @@ public class SeatController {
      * 检查ADMIN角色是否有权限访问指定影厅的座位
      */
     private boolean checkAdminHallAccess(Long hallId) {
-        if (!SecurityUtils.isStaff()) {
-            return true; // 非ADMIN角色可以访问
+        if (!SecurityUtils.isStaff() && !SecurityUtils.isAdmin()) {
+            return true; // 非STAFF且非ADMIN角色可以访问
         }
         
         String username = SecurityUtils.getCurrentUsername();

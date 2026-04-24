@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/cinemas")
+@RequestMapping("/cinemas")
 public class CinemaController {
     @Resource
     private CinemaService cinemaService;
@@ -37,42 +37,47 @@ public class CinemaController {
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String district
     ) {
-        // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色只能查看绑定的影院
-            String username = SecurityUtils.getCurrentUsername();
-            if (username != null) {
-                var user = userService.getByUsername(username);
-                if (user != null) {
-                    Long cinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
-                    if (cinemaId != null) {
-                        // 只查询指定影院
-                        var cinema = cinemaService.getCinemaById(cinemaId);
-                        if (cinema != null) {
-                            List<CinemaVO> cinemaVOs = List.of(convertToVO(cinema));
-                            CinemaPageResponse response = new CinemaPageResponse(1L, cinemaVOs);
-                            return ResponseEntity.ok(ResponseResult.success(response));
+        try {
+            // 检查权限
+            if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+                // STAFF和ADMIN角色只能查看绑定的影院
+                String username = SecurityUtils.getCurrentUsername();
+                if (username != null) {
+                    var user = userService.getByUsername(username);
+                    if (user != null) {
+                        Long cinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
+                        if (cinemaId != null) {
+                            // 只查询指定影院
+                            var cinema = cinemaService.getCinemaById(cinemaId);
+                            if (cinema != null) {
+                                List<CinemaVO> cinemaVOs = List.of(convertToVO(cinema));
+                                CinemaPageResponse response = new CinemaPageResponse(1L, cinemaVOs);
+                                return ResponseEntity.ok(ResponseResult.success(response));
+                            }
                         }
+                        // 没有绑定影院，返回空结果
+                        CinemaPageResponse response = new CinemaPageResponse(0L, List.of());
+                        return ResponseEntity.ok(ResponseResult.success(response));
                     }
-                    // 没有绑定影院，返回空结果
-                    CinemaPageResponse response = new CinemaPageResponse(0L, List.of());
-                    return ResponseEntity.ok(ResponseResult.success(response));
                 }
             }
+            
+            // SUPER_ADMIN或其他角色可以查看所有影院
+            IPage<Cinemas> result = cinemaService.pageCinemas(page, pageSize, name, province, city, district);
+            List<CinemaVO> cinemaVOs = result.getRecords().stream().map(this::convertToVO).collect(Collectors.toList());
+            CinemaPageResponse response = new CinemaPageResponse(result.getTotal(), cinemaVOs);
+            return ResponseEntity.ok(ResponseResult.success(response));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.ok(ResponseResult.error("获取影院列表失败"));
         }
-        
-        // SUPER_ADMIN或ADMIN角色可以查看所有影院
-        IPage<Cinemas> result = cinemaService.pageCinemas(page, pageSize, name, province, city, district);
-        List<CinemaVO> cinemaVOs = result.getRecords().stream().map(this::convertToVO).collect(Collectors.toList());
-        CinemaPageResponse response = new CinemaPageResponse(result.getTotal(), cinemaVOs);
-        return ResponseEntity.ok(ResponseResult.success(response));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseResult<CinemaVO>> get(@PathVariable Long id) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色只能查看绑定的影院
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能查看绑定的影院
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -95,8 +100,8 @@ public class CinemaController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> update(@PathVariable Long id, @RequestBody Cinemas cinema) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色只能修改绑定的影院
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能修改绑定的影院
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -121,8 +126,8 @@ public class CinemaController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> delete(@PathVariable Long id) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色只能删除绑定的影院
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色只能删除绑定的影院
             String username = SecurityUtils.getCurrentUsername();
             if (username != null) {
                 var user = userService.getByUsername(username);
@@ -146,8 +151,8 @@ public class CinemaController {
     @PostMapping
     public ResponseEntity<ResponseResult<Void>> add(@RequestBody Cinemas cinema) {
         // 检查权限
-        if (SecurityUtils.isStaff()) {
-            // STAFF角色不能添加影院，只能由SUPER_ADMIN或ADMIN添加
+        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
+            // STAFF和ADMIN角色不能添加影院，只能由SUPER_ADMIN添加
             return ResponseEntity.ok(ResponseResult.error("无权添加影院"));
         }
         

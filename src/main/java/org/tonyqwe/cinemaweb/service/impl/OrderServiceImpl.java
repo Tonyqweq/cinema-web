@@ -611,4 +611,54 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Orders> implement
 
         return result;
     }
+
+    @Override
+    public List<Orders> getAllOrders() {
+        List<Orders> orders = orderMapper.selectList(null);
+        // 为每个订单添加影院信息
+        for (Orders order : orders) {
+            Showtimes showtime = showtimesMapper.selectById(order.getShowtimeId());
+            if (showtime != null) {
+                order.setCinemaId(showtime.getCinemaId());
+                Cinemas cinema = cinemaMapper.selectById(showtime.getCinemaId());
+                if (cinema != null) {
+                    order.setCinemaName(cinema.getName());
+                }
+            }
+        }
+        return orders;
+    }
+
+    @Override
+    public List<Orders> getOrdersByCinemaId(Long cinemaId) {
+        // 获取该影院的所有排片ID
+        LambdaQueryWrapper<Showtimes> showtimeWrapper = new LambdaQueryWrapper<>();
+        showtimeWrapper.eq(Showtimes::getCinemaId, cinemaId);
+        List<Showtimes> showtimes = showtimesMapper.selectList(showtimeWrapper);
+
+        if (showtimes.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 提取排片ID列表
+        List<Long> showtimeIds = showtimes.stream()
+                .map(Showtimes::getId)
+                .collect(java.util.stream.Collectors.toList());
+
+        // 根据排片ID获取订单
+        LambdaQueryWrapper<Orders> orderWrapper = new LambdaQueryWrapper<>();
+        orderWrapper.in(Orders::getShowtimeId, showtimeIds);
+        List<Orders> orders = orderMapper.selectList(orderWrapper);
+        
+        // 为每个订单添加影院信息
+        for (Orders order : orders) {
+            order.setCinemaId(cinemaId);
+            Cinemas cinema = cinemaMapper.selectById(cinemaId);
+            if (cinema != null) {
+                order.setCinemaName(cinema.getName());
+            }
+        }
+        
+        return orders;
+    }
 }
