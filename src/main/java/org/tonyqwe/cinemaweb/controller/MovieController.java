@@ -16,6 +16,7 @@ import org.tonyqwe.cinemaweb.domain.dto.UpdateMovieStatusRequest;
 import org.tonyqwe.cinemaweb.domain.entity.Movies;
 import org.tonyqwe.cinemaweb.domain.vo.MovieVO;
 import org.tonyqwe.cinemaweb.service.MovieService;
+import org.tonyqwe.cinemaweb.service.impl.MovieServiceImpl;
 import org.tonyqwe.cinemaweb.service.CinemaMovieRelationService;
 import org.tonyqwe.cinemaweb.service.MinioService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
@@ -30,6 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Calendar;
+import java.util.Date;
 
 @Slf4j
 @RestController
@@ -274,9 +277,9 @@ public class MovieController {
         vo.setPosterUrl(movie.getPosterUrl());
         vo.setTrailerUrl(movie.getTrailerUrl());
         vo.setStatus(movie.getStatus());
+        vo.setRating(movie.getRating());
         vo.setCreatedAt(movie.getCreatedAt());
         vo.setUpdatedAt(movie.getUpdatedAt());
-        vo.setRating(movieService.getMovieRating(movie.getId()));
         vo.setTags(tagService.getTagsByMovieId(movie.getId()));
         return vo;
     }
@@ -326,5 +329,153 @@ public class MovieController {
         }
         
         return ResponseEntity.ok(ResponseResult.success("标签更新成功", null));
+    }
+
+    /**
+     * 随机推荐电影
+     * GET /api/movies/random?count=4
+     */
+    @GetMapping("/random")
+    public ResponseEntity<ResponseResult<List<MovieVO>>> getRandomMovies(
+            @RequestParam(defaultValue = "4") int count
+    ) {
+        try {
+            // 获取所有上架的电影
+            List<Movies> allMovies = movieService.lambdaQuery()
+                    .eq(Movies::getStatus, 1)
+                    .list();
+
+            if (allMovies.isEmpty()) {
+                return ResponseEntity.ok(ResponseResult.success(List.of()));
+            }
+
+            // 随机打乱顺序并取指定数量
+            List<Movies> randomMovies = allMovies.stream()
+                    .collect(java.util.stream.Collectors.collectingAndThen(
+                            java.util.stream.Collectors.toList(),
+                            list -> {
+                                java.util.Collections.shuffle(list);
+                                return list;
+                            }
+                    ))
+                    .stream()
+                    .limit(Math.min(count, allMovies.size()))
+                    .collect(Collectors.toList());
+
+            List<MovieVO> movieVOs = randomMovies.stream().map(this::convertToVO).collect(Collectors.toList());
+            return ResponseEntity.ok(ResponseResult.success(movieVOs));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseResult.error(500, "获取随机推荐失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取首页数据（正在热映、即将上映）
+     * GET /api/movies/home
+     */
+    @GetMapping("/home")
+    public ResponseEntity<ResponseResult<Map<String, Object>>> getHomeData(@RequestParam(value = "sortBy", defaultValue = "rating") String sortBy) {
+        try {
+            Map<String, Object> homeData = new HashMap<>();
+            java.util.Date now = new java.util.Date();
+
+            // 1. 正在热映 - 上映日期在过去或今天的电影
+            List<Movies> moviesList;
+            
+            // 根据排序参数进行排序
+            if ("rating".equals(sortBy)) {
+                // 按评分降序
+                moviesList = movieService.lambdaQuery()
+                        .eq(Movies::getStatus, 1)
+                        .le(Movies::getReleaseDate, now)
+                        .orderByDesc(Movies::getRating)
+                        .last("LIMIT 8")
+                        .list();
+            } else if ("hot".equals(sortBy)) {
+                // 这里简化处理，按评论数排序（实际应该按热度字段）
+                moviesList = movieService.lambdaQuery()
+                        .eq(Movies::getStatus, 1)
+                        .le(Movies::getReleaseDate, now)
+                        .orderByDesc(Movies::getId)
+                        .last("LIMIT 8")
+                        .list();
+            } else if ("box".equals(sortBy)) {
+                // 这里简化处理，按 ID 排序（实际应该按票房字段）
+                moviesList = movieService.lambdaQuery()
+                        .eq(Movies::getStatus, 1)
+                        .le(Movies::getReleaseDate, now)
+                        .orderByDesc(Movies::getId)
+                        .last("LIMIT 8")
+                        .list();
+            } else {
+                // 默认按评分排序
+                moviesList = movieService.lambdaQuery()
+                        .eq(Movies::getStatus, 1)
+                        .le(Movies::getReleaseDate, now)
+                        .orderByDesc(Movies::getRating)
+                        .last("LIMIT 8")
+                        .list();
+            }
+            
+            List<MovieVO> rankedMovies = moviesList.stream()
+                    .map(movie -> {
+                        MovieVO vo = convertToVO(movie);
+                        vo.setReviewCount(movieService.getMovieReviewCount(movie.getId()));
+                        return vo;
+                    })
+                    .collect(Collectors.toList());
+            homeData.put("rankedMovies", rankedMovies);
+
+            // 2. 正在热映 - 当月有排片的电影
+            // 计算当月的开始和结束日期
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.DAY_OF_MONTH, 1);
+            Date monthStart = calendar.getTime();
+            
+            calendar.add(Calendar.MONTH, 1);
+            calendar.add(Calendar.DAY_OF_MONTH, -1);
+            Date monthEnd = calendar.getTime();
+            
+            List<Movies> upcomingMoviesList = movieService.lambdaQuery()
+                    .eq(Movies::getStatus, 1)
+                    .le(Movies::getReleaseDate, monthEnd) // 上映日期不晚于当月结束
+                    .ge(Movies::getReleaseDate, monthStart) // 上映日期不早于当月开始
+                    .orderByAsc(Movies::getReleaseDate)
+                    .last("LIMIT 4")
+                    .list();
+            
+            List<MovieVO> upcomingMovies = upcomingMoviesList.stream()
+                    .map(movie -> {
+                        MovieVO vo = convertToVO(movie);
+                        vo.setReviewCount(movieService.getMovieReviewCount(movie.getId()));
+                        return vo;
+                    })
+                    .collect(Collectors.toList());
+            homeData.put("upcomingMovies", upcomingMovies);
+
+            return ResponseEntity.ok(ResponseResult.success(homeData));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseResult.error(500, "获取首页数据失败：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 初始化所有电影评分（仅用于数据迁移）
+     * POST /api/movies/init-ratings
+     */
+    @PostMapping("/init-ratings")
+    public ResponseEntity<ResponseResult<String>> initRatings() {
+        try {
+            ((MovieServiceImpl) movieService).initializeAllMovieRatings();
+            return ResponseEntity.ok(ResponseResult.success("电影评分初始化完成"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseResult.error(500, "初始化评分失败：" + e.getMessage()));
+        }
     }
 }

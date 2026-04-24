@@ -95,6 +95,12 @@ public class Orders {
     private String movieName;
 
     /**
+     * 影院ID
+     */
+    @TableField(exist = false)
+    private Long cinemaId;
+
+    /**
      * 影院名
      */
     @TableField(exist = false)
@@ -111,4 +117,10 @@ public class Orders {
      */
     @TableField(exist = false)
     private String hallName;
+
+    /**
+     * 座位名称列表（非数据库字段）
+     */
+    @TableField(exist = false)
+    private List<String> seatNames;
 }

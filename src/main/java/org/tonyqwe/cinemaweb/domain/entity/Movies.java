@@ -48,6 +48,8 @@ public class Movies {
 
     private Integer status; // 状态：1=上架可售，0=下架不可售
 
+    private Double rating; // 电影评分 (0-10)
+
     @JsonProperty("created_at")
     @TableField("created_at")
     private Date createdAt; // 创建时间

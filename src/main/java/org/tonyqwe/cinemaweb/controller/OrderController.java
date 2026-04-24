@@ -7,9 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.dto.OrderRequest;
 import org.tonyqwe.cinemaweb.domain.entity.Orders;
+import org.tonyqwe.cinemaweb.service.AdminCinemaRelationService;
 import org.tonyqwe.cinemaweb.service.OrderService;
 import org.tonyqwe.cinemaweb.service.TokenService;
+import org.tonyqwe.cinemaweb.service.UserService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
+import org.tonyqwe.cinemaweb.utils.SecurityUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,12 @@ public class OrderController {
 
     @Resource
     private TokenService tokenService;
+
+    @Resource
+    private UserService userService;
+
+    @Resource
+    private AdminCinemaRelationService adminCinemaRelationService;
 
     /**
      * 创建订单
@@ -170,6 +179,41 @@ public class OrderController {
             // 支付订单
             boolean result = orderService.payOrder(id, userId, paymentMethod);
             return ResponseEntity.ok(ResponseResult.success(result));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ResponseResult.error(500, e.getMessage()));
+        }
+    }
+
+    /**
+     * 管理后台获取订单列表
+     * GET /api/admin/orders
+     */
+    @GetMapping("/admin")
+    public ResponseEntity<ResponseResult<List<Orders>>> getAdminOrders() {
+        try {
+            List<Orders> orders;
+
+            if (SecurityUtils.isSuperAdmin()) {
+                // SUPER_ADMIN可以查看所有订单
+                orders = orderService.getAllOrders();
+            } else if (SecurityUtils.isAdmin() || SecurityUtils.isStaff()) {
+                // ADMIN和STAFF只能查看绑定影院的订单
+                String username = SecurityUtils.getCurrentUsername();
+                if (username != null) {
+                    Long userCinemaId = adminCinemaRelationService.getCinemaIdByAdminUsername(username);
+                    if (userCinemaId != null) {
+                        orders = orderService.getOrdersByCinemaId(userCinemaId);
+                    } else {
+                        return ResponseEntity.ok(ResponseResult.error(403, "未绑定影院，无法查看订单"));
+                    }
+                } else {
+                    return ResponseEntity.ok(ResponseResult.error(401, "未登录"));
+                }
+            } else {
+                return ResponseEntity.ok(ResponseResult.error(403, "无权访问"));
+            }
+
+            return ResponseEntity.ok(ResponseResult.success(orders));
         } catch (Exception e) {
             return ResponseEntity.ok(ResponseResult.error(500, e.getMessage()));
         }

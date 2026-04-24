@@ -27,4 +27,5 @@ public class MovieVO {
     private Date updatedAt;
     private Double rating;
     private List<Tags> tags;
+    private Integer reviewCount;
 }

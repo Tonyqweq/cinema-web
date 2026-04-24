@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.tonyqwe.cinemaweb.domain.entity.MovieReview;
 import org.tonyqwe.cinemaweb.mapper.MovieReviewMapper;
 import org.tonyqwe.cinemaweb.service.MovieReviewService;
+import org.tonyqwe.cinemaweb.service.MovieService;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -18,6 +19,9 @@ public class MovieReviewServiceImpl implements MovieReviewService {
     
     @Resource
     private MovieReviewMapper movieReviewMapper;
+    
+    @Resource
+    private MovieService movieService;
     
     @Override
     public IPage<MovieReview> getReviewsByMovieId(Long movieId, long page, long pageSize) {
@@ -38,12 +42,22 @@ public class MovieReviewServiceImpl implements MovieReviewService {
             existingReview.setRating(review.getRating());
             existingReview.setComment(review.getComment());
             existingReview.setUpdatedAt(LocalDateTime.now());
-            return movieReviewMapper.updateById(existingReview) > 0;
+            boolean result = movieReviewMapper.updateById(existingReview) > 0;
+            // 更新电影评分
+            if (result) {
+                movieService.updateMovieRating(review.getMovieId());
+            }
+            return result;
         } else {
             // 创建新评论
             review.setCreatedAt(LocalDateTime.now());
             review.setUpdatedAt(LocalDateTime.now());
-            return movieReviewMapper.insert(review) > 0;
+            boolean result = movieReviewMapper.insert(review) > 0;
+            // 更新电影评分
+            if (result) {
+                movieService.updateMovieRating(review.getMovieId());
+            }
+            return result;
         }
     }
     
@@ -51,7 +65,13 @@ public class MovieReviewServiceImpl implements MovieReviewService {
     public boolean deleteReview(Long reviewId, Long userId) {
         MovieReview review = movieReviewMapper.selectById(reviewId);
         if (review != null && review.getUserId().equals(userId)) {
-            return movieReviewMapper.deleteById(reviewId) > 0;
+            Long movieId = review.getMovieId();
+            boolean result = movieReviewMapper.deleteById(reviewId) > 0;
+            // 删除评论后更新电影评分
+            if (result && movieId != null) {
+                movieService.updateMovieRating(movieId);
+            }
+            return result;
         }
         return false;
     }

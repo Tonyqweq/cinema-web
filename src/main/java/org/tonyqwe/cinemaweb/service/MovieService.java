@@ -29,14 +29,22 @@ public interface MovieService extends IService<Movies> {
     boolean deleteMovie(Long id);
 
     java.util.List<Movies> getMoviesByIds(java.util.List<Long> ids);
-    
-    Double getMovieRating(Long movieId);
 
+    /**
+     * 更新电影评分（基于评论计算）
+     */
+    void updateMovieRating(Long movieId);
+    
     java.util.List<Movies> getMoviesByTagIds(java.util.List<Long> tagIds);
 
     /**
      * 获取电影总数
      */
     long count();
+
+    /**
+     * 获取电影评论数量（用于排行）
+     */
+    Integer getMovieReviewCount(Long movieId);
 }
 
