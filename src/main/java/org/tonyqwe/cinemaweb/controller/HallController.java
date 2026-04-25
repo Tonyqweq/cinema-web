@@ -3,6 +3,7 @@ package org.tonyqwe.cinemaweb.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import jakarta.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.dto.HallDTO;
 import org.tonyqwe.cinemaweb.domain.dto.HallPageResponse;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/halls")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')") // 影厅管理允许 SUPER_ADMIN, ADMIN, STAFF
 public class HallController {
 
     @Resource

@@ -95,12 +95,6 @@ public class Orders {
     private String movieName;
 
     /**
-     * 影院ID
-     */
-    @TableField(exist = false)
-    private Long cinemaId;
-
-    /**
      * 影院名
      */
     @TableField(exist = false)

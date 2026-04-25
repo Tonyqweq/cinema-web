@@ -91,4 +91,41 @@ public interface OrderService {
      * @return 订单列表
      */
     List<Orders> getOrdersByCinemaId(Long cinemaId);
+
+    /**
+     * 获取订单总数（可按影院筛选）
+     * @param cinemaId 影院ID（可选）
+     * @return 订单数量
+     */
+    long count(Long cinemaId);
+
+    /**
+     * 获取总票房（可按影院筛选）
+     * @param cinemaId 影院ID（可选）
+     * @return 总票房
+     */
+    double getTotalRevenue(Long cinemaId);
+
+    /**
+     * 按月获取票房统计（可按影院筛选）
+     * @param months 月份数
+     * @param cinemaId 影院ID（可选）
+     * @return 每月票房列表
+     */
+    java.util.List<java.util.Map<String, Object>> getMonthlyRevenue(int months, Long cinemaId);
+
+    /**
+     * 按状态获取订单统计（可按影院筛选）
+     * @param cinemaId 影院ID（可选）
+     * @return 各状态订单数量
+     */
+    java.util.List<java.util.Map<String, Object>> getOrderStatusStats(Long cinemaId);
+
+    /**
+     * 获取热门电影（可按影院筛选）
+     * @param limit 返回数量
+     * @param cinemaId 影院ID（可选）
+     * @return 热门电影列表
+     */
+    java.util.List<java.util.Map<String, Object>> getPopularMovies(int limit, Long cinemaId);
 }

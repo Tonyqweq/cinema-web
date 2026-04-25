@@ -3,6 +3,7 @@ package org.tonyqwe.cinemaweb.controller;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.tonyqwe.cinemaweb.service.MovieService;
 import org.tonyqwe.cinemaweb.service.OrderService;
@@ -33,25 +34,26 @@ public class DashboardController {
 
     /**
      * 获取仪表盘统计数据
+     * @param cinemaId 影院ID（可选）
      */
     @GetMapping("/stats")
-    public ResponseResult<?> getDashboardStats() {
+    public ResponseResult<?> getDashboardStats(@RequestParam(required = false) Long cinemaId) {
         Map<String, Object> stats = new HashMap<>();
 
-        // 总用户数
+        // 总用户数（不受影院影响）
         long totalUsers = userService.count();
         stats.put("totalUsers", totalUsers);
 
-        // 电影数量
+        // 电影数量（不受影院影响）
         long totalMovies = movieService.count();
         stats.put("totalMovies", totalMovies);
 
         // 订单总数
-        long totalOrders = orderService.count();
+        long totalOrders = orderService.count(cinemaId);
         stats.put("totalOrders", totalOrders);
 
         // 总票房
-        double totalRevenue = orderService.getTotalRevenue();
+        double totalRevenue = orderService.getTotalRevenue(cinemaId);
         stats.put("totalRevenue", totalRevenue);
 
         return ResponseResult.success(stats);
@@ -59,10 +61,11 @@ public class DashboardController {
 
     /**
      * 获取票房趋势数据
+     * @param cinemaId 影院ID（可选）
      */
     @GetMapping("/revenue-trend")
-    public ResponseResult<?> getRevenueTrend() {
-        List<Map<String, Object>> monthlyData = orderService.getMonthlyRevenue(6);
+    public ResponseResult<?> getRevenueTrend(@RequestParam(required = false) Long cinemaId) {
+        List<Map<String, Object>> monthlyData = orderService.getMonthlyRevenue(6, cinemaId);
 
         List<String> months = new ArrayList<>();
         List<Double> revenue = new ArrayList<>();
@@ -84,7 +87,7 @@ public class DashboardController {
      */
     @GetMapping("/user-distribution")
     public ResponseResult<?> getUserDistribution() {
-        // 获取用户角色分布
+        // 获取用户角色分布（不受影院影响）
         List<Map<String, Object>> distribution = userRoleService.getUserDistribution();
 
         return ResponseResult.success(distribution);
@@ -92,20 +95,22 @@ public class DashboardController {
 
     /**
      * 获取订单状态分布数据
+     * @param cinemaId 影院ID（可选）
      */
     @GetMapping("/order-status")
-    public ResponseResult<?> getOrderStatus() {
-        List<Map<String, Object>> status = orderService.getOrderStatusStats();
+    public ResponseResult<?> getOrderStatus(@RequestParam(required = false) Long cinemaId) {
+        List<Map<String, Object>> status = orderService.getOrderStatusStats(cinemaId);
 
         return ResponseResult.success(status);
     }
 
     /**
      * 获取热门电影数据
+     * @param cinemaId 影院ID（可选）
      */
     @GetMapping("/popular-movies")
-    public ResponseResult<?> getPopularMovies() {
-        List<Map<String, Object>> movies = orderService.getPopularMovies(5);
+    public ResponseResult<?> getPopularMovies(@RequestParam(required = false) Long cinemaId) {
+        List<Map<String, Object>> movies = orderService.getPopularMovies(5, cinemaId);
 
         return ResponseResult.success(movies);
     }
