@@ -3,6 +3,7 @@ package org.tonyqwe.cinemaweb.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import jakarta.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.dto.ShowtimesDTO;
 import org.tonyqwe.cinemaweb.domain.dto.ShowtimesPageResponse;
@@ -49,7 +50,7 @@ public class ShowtimesController {
     private AdminCinemaRelationService adminCinemaRelationService;
 
     /**
-     * 分页查询排片列表
+     * 分页查询排片列表（用于购票，所有已认证用户可访问）
      */
     @GetMapping
     public ResponseEntity<ResponseResult<ShowtimesPageResponse>> pageShowtimes(
@@ -58,30 +59,6 @@ public class ShowtimesController {
             @RequestParam(required = false) Long cinemaId,
             @RequestParam(required = false) Long hallId,
             @RequestParam(required = false) Long movieId) {
-
-        // 检查权限
-        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
-            // STAFF和ADMIN角色只能查看绑定影院的排片
-            String username = SecurityUtils.getCurrentUsername();
-            if (username != null) {
-                var user = userService.getByUsername(username);
-                if (user != null) {
-                    Long boundCinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
-                    if (boundCinemaId != null) {
-                        // 只能查询绑定影院的排片
-                        if (cinemaId != null && !cinemaId.equals(boundCinemaId)) {
-                            ShowtimesPageResponse response = new ShowtimesPageResponse(0L, List.of());
-                            return ResponseEntity.ok(ResponseResult.success(response));
-                        }
-                        cinemaId = boundCinemaId;
-                    } else {
-                        // 没有绑定影院，返回空结果
-                        ShowtimesPageResponse response = new ShowtimesPageResponse(0L, List.of());
-                        return ResponseEntity.ok(ResponseResult.success(response));
-                    }
-                }
-            }
-        }
 
         IPage<Showtimes> showtimesPage = showtimesService.pageShowtimes(page, pageSize, cinemaId, hallId, movieId);
         List<ShowtimesVO> showtimesVOs = showtimesPage.getRecords().stream()
@@ -93,7 +70,7 @@ public class ShowtimesController {
     }
 
     /**
-     * 获取排片详情
+     * 获取排片详情（用于购票，所有已认证用户可访问）
      */
     @GetMapping("/{id}")
     public ResponseEntity<ResponseResult<ShowtimesVO>> getShowtimes(@PathVariable Long id) {
@@ -102,27 +79,13 @@ public class ShowtimesController {
             return ResponseEntity.ok(ResponseResult.error("排片不存在"));
         }
 
-        // 检查权限
-        if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
-            // STAFF和ADMIN角色只能查看绑定影院的排片
-            String username = SecurityUtils.getCurrentUsername();
-            if (username != null) {
-                var user = userService.getByUsername(username);
-                if (user != null) {
-                    Long boundCinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
-                    if (boundCinemaId == null || !boundCinemaId.equals(showtimes.getCinemaId())) {
-                        return ResponseEntity.ok(ResponseResult.error("无权访问该排片"));
-                    }
-                }
-            }
-        }
-
         return ResponseEntity.ok(ResponseResult.success(convertToVO(showtimes)));
     }
 
     /**
      * 保存排片
      */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
     @PostMapping
     public ResponseEntity<ResponseResult<Void>> saveShowtimes(@RequestBody ShowtimesDTO showtimesDTO) {
         // 检查权限
@@ -174,6 +137,7 @@ public class ShowtimesController {
     /**
      * 删除排片
      */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> deleteShowtimes(@PathVariable Long id) {
         Showtimes showtimes = showtimesService.getById(id);

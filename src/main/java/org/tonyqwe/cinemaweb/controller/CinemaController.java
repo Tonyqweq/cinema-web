@@ -3,6 +3,7 @@ package org.tonyqwe.cinemaweb.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import jakarta.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.dto.CinemaPageResponse;
 import org.tonyqwe.cinemaweb.domain.entity.Cinemas;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/cinemas")
+@RequestMapping("/api/cinemas")
 public class CinemaController {
     @Resource
     private CinemaService cinemaService;
@@ -38,38 +39,20 @@ public class CinemaController {
             @RequestParam(required = false) String district
     ) {
         try {
-            // 检查权限
-            if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
-                // STAFF和ADMIN角色只能查看绑定的影院
-                String username = SecurityUtils.getCurrentUsername();
-                if (username != null) {
-                    var user = userService.getByUsername(username);
-                    if (user != null) {
-                        Long cinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
-                        if (cinemaId != null) {
-                            // 只查询指定影院
-                            var cinema = cinemaService.getCinemaById(cinemaId);
-                            if (cinema != null) {
-                                List<CinemaVO> cinemaVOs = List.of(convertToVO(cinema));
-                                CinemaPageResponse response = new CinemaPageResponse(1L, cinemaVOs);
-                                return ResponseEntity.ok(ResponseResult.success(response));
-                            }
-                        }
-                        // 没有绑定影院，返回空结果
-                        CinemaPageResponse response = new CinemaPageResponse(0L, List.of());
-                        return ResponseEntity.ok(ResponseResult.success(response));
-                    }
-                }
-            }
+            System.out.println("获取影院列表请求: page=" + page + ", pageSize=" + pageSize + ", name=" + name);
+            System.out.println("当前用户: " + SecurityUtils.getCurrentUsername());
+            System.out.println("是否Staff: " + SecurityUtils.isStaff() + ", 是否Admin: " + SecurityUtils.isAdmin());
             
-            // SUPER_ADMIN或其他角色可以查看所有影院
+            // 直接查询所有影院
             IPage<Cinemas> result = cinemaService.pageCinemas(page, pageSize, name, province, city, district);
+            System.out.println("查询到影院数量: " + result.getTotal());
             List<CinemaVO> cinemaVOs = result.getRecords().stream().map(this::convertToVO).collect(Collectors.toList());
             CinemaPageResponse response = new CinemaPageResponse(result.getTotal(), cinemaVOs);
             return ResponseEntity.ok(ResponseResult.success(response));
         } catch (Exception e) {
+            System.err.println("获取影院列表失败: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.ok(ResponseResult.error("获取影院列表失败"));
+            return ResponseEntity.ok(ResponseResult.error("获取影院列表失败: " + e.getMessage()));
         }
     }
 
@@ -88,6 +71,9 @@ public class CinemaController {
                     }
                 }
             }
+        } else {
+            // 非管理角色（普通用户）不能访问单个影院详情（这是管理后台接口）
+            return ResponseEntity.ok(ResponseResult.error("无权访问该影院"));
         }
         
         Cinemas cinema = cinemaService.getCinemaById(id);
@@ -98,6 +84,7 @@ public class CinemaController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 仅 SUPER_ADMIN 可修改
     public ResponseEntity<ResponseResult<Void>> update(@PathVariable Long id, @RequestBody Cinemas cinema) {
         // 检查权限
         if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
@@ -124,6 +111,7 @@ public class CinemaController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 仅 SUPER_ADMIN 可删除
     public ResponseEntity<ResponseResult<Void>> delete(@PathVariable Long id) {
         // 检查权限
         if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {
@@ -149,6 +137,7 @@ public class CinemaController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 仅 SUPER_ADMIN 可添加
     public ResponseEntity<ResponseResult<Void>> add(@RequestBody Cinemas cinema) {
         // 检查权限
         if (SecurityUtils.isStaff() || SecurityUtils.isAdmin()) {

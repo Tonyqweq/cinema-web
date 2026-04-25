@@ -2,6 +2,7 @@ package org.tonyqwe.cinemaweb.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.service.CinemaMovieRelationService;
 import org.tonyqwe.cinemaweb.service.AdminCinemaRelationService;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/cinema-movies")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')") // 影片-影院绑定管理允许 SUPER_ADMIN, ADMIN, STAFF
 public class CinemaMovieController {
 
     @Autowired

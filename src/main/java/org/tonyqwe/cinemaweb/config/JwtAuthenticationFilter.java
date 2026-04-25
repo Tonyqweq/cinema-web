@@ -18,6 +18,7 @@ import org.tonyqwe.cinemaweb.service.AuthService;
 import org.tonyqwe.cinemaweb.service.PermissionService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,28 +51,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 如果上下文中还没有认证信息，则尝试根据 token 认证
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            SysUsers currentUser = authService.getCurrentUser(token);
-            if (currentUser != null) {
-                // 权限码（细粒度） + 角色名 ROLE_ 前缀（与 sys_roles.name 一致，供页面/API 区域鉴权）
-                List<String> codes = permissionService.getPermissionCodesByUserId(currentUser.getId());
-                List<String> roleNames = permissionService.getRoleNamesByUserId(currentUser.getId());
-                List<GrantedAuthority> authorities = codes.stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
-                for (String roleName : roleNames) {
-                    if (roleName != null && !roleName.isBlank()) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_" + roleName.trim()));
+            try {
+                SysUsers currentUser = authService.getCurrentUser(token);
+                if (currentUser != null) {
+                    // 权限码（细粒度） + 角色名 ROLE_ 前缀（与 sys_roles.name 一致，供页面/API 区域鉴权）
+                    List<String> codes = new ArrayList<>();
+                    List<String> roleNames = new ArrayList<>();
+                    try {
+                        codes = permissionService.getPermissionCodesByUserId(currentUser.getId());
+                    } catch (Exception e) {
+                        System.err.println("获取用户权限码失败: " + e.getMessage());
                     }
-                }
+                    try {
+                        roleNames = permissionService.getRoleNamesByUserId(currentUser.getId());
+                    } catch (Exception e) {
+                        System.err.println("获取用户角色失败: " + e.getMessage());
+                    }
+                    List<GrantedAuthority> authorities = codes.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
+                    for (String roleName : roleNames) {
+                        if (roleName != null && !roleName.isBlank()) {
+                            authorities.add(new SimpleGrantedAuthority("ROLE_" + roleName.trim()));
+                        }
+                    }
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                currentUser.getUsername(),
-                                null,
-                                authorities
-                        );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    currentUser.getUsername(),
+                                    null,
+                                    authorities
+                            );
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (Exception e) {
+                System.err.println("JWT认证过程发生异常: " + e.getMessage());
+                // 不阻止请求继续，让后续的安全检查处理
             }
         }
 

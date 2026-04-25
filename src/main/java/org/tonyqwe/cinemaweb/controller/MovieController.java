@@ -7,6 +7,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.tonyqwe.cinemaweb.domain.dto.MovieBodyRequest;
@@ -15,11 +16,13 @@ import org.tonyqwe.cinemaweb.domain.dto.MoviePageResponse;
 import org.tonyqwe.cinemaweb.domain.dto.UpdateMovieStatusRequest;
 import org.tonyqwe.cinemaweb.domain.entity.Movies;
 import org.tonyqwe.cinemaweb.domain.vo.MovieVO;
+import org.tonyqwe.cinemaweb.service.AdminCinemaRelationService;
 import org.tonyqwe.cinemaweb.service.MovieService;
 import org.tonyqwe.cinemaweb.service.impl.MovieServiceImpl;
 import org.tonyqwe.cinemaweb.service.CinemaMovieRelationService;
 import org.tonyqwe.cinemaweb.service.MinioService;
 import org.tonyqwe.cinemaweb.utils.ResponseResult;
+import org.tonyqwe.cinemaweb.utils.SecurityUtils;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
@@ -50,6 +53,9 @@ public class MovieController {
 
     @Resource
     private org.tonyqwe.cinemaweb.service.TagService tagService;
+
+    @Resource
+    private AdminCinemaRelationService adminCinemaRelationService;
 
     /**
      * 分页查询电影列表
@@ -109,6 +115,7 @@ public class MovieController {
      * 新增电影（无需 id,状态默认上架）
      * POST /api/movies
      */
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 总影片管理仅允许 SUPER_ADMIN
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseResult<MovieVO>> create(@RequestBody @Valid MovieBodyRequest request) {
         Movies created = movieService.createMovie(request);
@@ -119,6 +126,7 @@ public class MovieController {
      * 从 Excel 批量导入（首行可为表头：title, original_title, language, country, duration_min, release_date, description, poster_url, trailer_url）
      * POST /api/movies/import
      */
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 总影片管理仅允许 SUPER_ADMIN
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseResult<MovieImportResult>> importExcel(       
             @RequestParam("file") MultipartFile file
@@ -131,6 +139,7 @@ public class MovieController {
      * 上传海报
      * POST /api/movies/upload-poster
      */
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 总影片管理仅允许 SUPER_ADMIN
     @PostMapping("/upload-poster")
     public ResponseEntity<?> uploadPoster(@RequestParam("file") MultipartFile file) {
         try {
@@ -160,6 +169,7 @@ public class MovieController {
      * 更新电影信息（不可改 id,status）
      * PUT /api/movies/{id}   
      */
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 总影片管理仅允许 SUPER_ADMIN
     @PutMapping("/{id}")
     public ResponseEntity<ResponseResult<MovieVO>> updateInfo(
             @PathVariable("id") Long id,
@@ -177,6 +187,7 @@ public class MovieController {
      * 更新电影状态（0=下架不可售，1=上架可售）
      * PUT /api/movies/{id}/status
      */
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 总影片管理仅允许 SUPER_ADMIN
     @PutMapping("/{id}/status")
     public ResponseEntity<ResponseResult<MovieVO>> updateStatus(
             @PathVariable("id") Long id,
@@ -203,6 +214,7 @@ public class MovieController {
      * 删除电影
      * DELETE /api/movies/{id}
      */
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 总影片管理仅允许 SUPER_ADMIN
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseResult<Void>> delete(@PathVariable("id") Long id) {
         // 检查电影是否已被绑定到影院，如果是，则不允许删除
@@ -223,9 +235,11 @@ public class MovieController {
     /**
      * 根据影院ID获取绑定的电影列表
      * GET /api/movies/cinema/{cinemaId}
+     * 此接口对所有已认证用户开放，不限制影院访问（购票页面需要）
      */
     @GetMapping("/cinema/{cinemaId}")
     public ResponseEntity<ResponseResult<List<MovieVO>>> getMoviesByCinemaId(@PathVariable("cinemaId") Long cinemaId) {
+        // 不限制访问，所有用户都可以查看影院的电影（购票页面需要）
         List<Long> movieIds = cinemaMovieRelationService.getMovieIdsByCinemaId(cinemaId);
         if (movieIds == null || movieIds.isEmpty()) {
             return ResponseEntity.ok(ResponseResult.success(List.of()));        
@@ -234,6 +248,27 @@ public class MovieController {
         List<Movies> movies = movieService.getMoviesByIds(movieIds);
         List<MovieVO> movieVOs = movies.stream().map(this::convertToVO).collect(Collectors.toList());
         return ResponseEntity.ok(ResponseResult.success(movieVOs));
+    }
+
+    /**
+     * 检查用户是否有权限访问指定影院
+     */
+    private boolean checkCinemaAccess(Long cinemaId) {
+        // SUPER_ADMIN可以访问所有影院
+        if (SecurityUtils.isSuperAdmin()) {
+            return true;
+        }
+
+        // ADMIN和STAFF只能访问其绑定的影院
+        if (SecurityUtils.isAdmin() || SecurityUtils.isStaff()) {
+            String username = SecurityUtils.getCurrentUsername();
+            if (username != null) {
+                Long userCinemaId = adminCinemaRelationService.getCinemaIdByAdminUsername(username);
+                return userCinemaId != null && userCinemaId.equals(cinemaId);
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -314,6 +349,7 @@ public class MovieController {
      * 更新电影标签
      * PUT /api/movies/{id}/tags
      */
+    @PreAuthorize("hasRole('SUPER_ADMIN')") // 总影片管理仅允许 SUPER_ADMIN
     @PutMapping("/{id}/tags")
     public ResponseEntity<ResponseResult<Void>> updateMovieTags(
             @PathVariable("id") Long id,

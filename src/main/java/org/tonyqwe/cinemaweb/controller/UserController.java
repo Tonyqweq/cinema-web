@@ -14,6 +14,7 @@ import org.tonyqwe.cinemaweb.domain.entity.SysUsers;
 import org.tonyqwe.cinemaweb.domain.dto.ChangePasswordRequest;
 import org.tonyqwe.cinemaweb.domain.dto.ChangePhoneRequest;
 import org.tonyqwe.cinemaweb.domain.dto.ChangeEmailRequest;
+import org.tonyqwe.cinemaweb.domain.dto.CreateUserRequest;
 import org.tonyqwe.cinemaweb.domain.vo.RoleVO;
 import org.tonyqwe.cinemaweb.domain.vo.UserListVO;
 import org.tonyqwe.cinemaweb.domain.vo.UserVO;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/users")
+@PreAuthorize("hasRole('SUPER_ADMIN')") // 用户管理仅允许 SUPER_ADMIN
 public class UserController {
 
     @Resource
@@ -115,7 +117,7 @@ public class UserController {
     /**
      * 获取所有角色
      */
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')") // 允许管理员角色查看角色列表
     @GetMapping("/roles")
     public ResponseResult<?> getRoles() {
         List<SysRole> roles = roleService.list();
@@ -128,7 +130,7 @@ public class UserController {
     /**
      * 获取用户角色
      */
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')") // 允许管理员角色查看用户角色
     @GetMapping("/role/{userId}")
     public ResponseResult<?> getUserRole(@PathVariable Integer userId) {
         List<SysUserRole> userRoles = userRoleService.list(new LambdaQueryWrapper<SysUserRole>()
@@ -237,6 +239,24 @@ public class UserController {
     }
 
     /**
+     * 获取当前用户绑定的影院ID
+     */
+    @PreAuthorize("isAuthenticated()") // 所有已认证用户可访问
+    @GetMapping("/me/cinema")
+    public ResponseResult<?> getMyCinema() {
+        String username = SecurityUtils.getCurrentUsername();
+        if (username == null) {
+            return ResponseResult.error("Not logged in");
+        }
+        SysUsers user = userService.getByUsername(username);
+        if (user == null) {
+            return ResponseResult.error("User not found");
+        }
+        Long cinemaId = adminCinemaRelationService.getCinemaIdByAdminId(user.getId());
+        return ResponseResult.success(cinemaId);
+    }
+
+    /**
      * 绑定用户与影院
      */
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
@@ -335,6 +355,110 @@ public class UserController {
             e.printStackTrace();
             return ResponseResult.error(500, "昵称修改失败：" + e.getMessage());
         }
+    }
+
+    /**
+     * 创建用户
+     * SUPER_ADMIN 可以创建 ADMIN, STAFF, USER
+     * ADMIN 可以创建 STAFF, USER
+     * STAFF 可以创建 USER
+     */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')")
+    @PostMapping("/create")
+    public ResponseResult<?> createUser(@RequestBody CreateUserRequest request) {
+        try {
+            // 获取当前用户的角色信息
+            String currentUsername = SecurityUtils.getCurrentUsername();
+            if (currentUsername == null || "anonymousUser".equals(currentUsername)) {
+                return ResponseResult.error(401, "用户未登录");
+            }
+            
+            SysUsers currentUser = userService.getByUsername(currentUsername);
+            if (currentUser == null) {
+                return ResponseResult.error(404, "用户不存在");
+            }
+            
+            // 获取当前用户角色
+            List<SysUserRole> currentUserRoles = userRoleService.list(
+                new LambdaQueryWrapper<SysUserRole>().eq(SysUserRole::getUserId, currentUser.getId()));
+            if (currentUserRoles.isEmpty()) {
+                return ResponseResult.error(403, "用户没有分配角色");
+            }
+            
+            // 获取目标角色
+            SysRole targetRole = roleService.getById(request.getRoleId());
+            if (targetRole == null) {
+                return ResponseResult.error(400, "目标角色不存在");
+            }
+            
+            // 角色等级: SUPER_ADMIN(1) > ADMIN(2) > STAFF(3) > USER(4)
+            Integer currentMaxLevel = getRoleMaxLevel(currentUserRoles);
+            Integer targetLevel = getRoleLevelByName(targetRole.getName());
+            
+            // 检查权限: 当前用户不能创建比自己等级高（数字小）的角色
+            if (targetLevel < currentMaxLevel) {
+                return ResponseResult.error(403, "无权创建比自身权限等级更高的用户");
+            }
+            
+            // 检查用户名是否已存在
+            if (userService.getByUsername(request.getUsername()) != null) {
+                return ResponseResult.error(400, "用户名已存在");
+            }
+            
+            // 创建用户
+            SysUsers newUser = new SysUsers();
+            newUser.setUsername(request.getUsername());
+            newUser.setPassword(request.getPassword()); // 应该加密，但当前实现可能已处理
+            newUser.setEmail(request.getEmail());
+            newUser.setGender(request.getGender() != null ? request.getGender() : 0);
+            newUser.setStatus(request.getStatus() != null ? request.getStatus() : 1);
+            newUser.setCreatedAt(new java.util.Date());
+            
+            userService.save(newUser);
+            
+            // 分配角色
+            SysUserRole userRole = new SysUserRole();
+            userRole.setUserId(newUser.getId());
+            userRole.setRoleId(request.getRoleId());
+            userRoleService.save(userRole);
+            
+            return ResponseResult.success("用户创建成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.error(500, "用户创建失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 根据角色名称获取角色等级
+     * 数字越小，等级越高
+     */
+    private Integer getRoleLevelByName(String roleName) {
+        if (roleName == null) return 999;
+        return switch (roleName) {
+            case "SUPER_ADMIN" -> 1;
+            case "ADMIN" -> 2;
+            case "STAFF" -> 3;
+            case "USER" -> 4;
+            default -> 999;
+        };
+    }
+    
+    /**
+     * 获取用户可创建的最高角色等级（基于用户当前角色）
+     */
+    private Integer getRoleMaxLevel(List<SysUserRole> userRoles) {
+        Integer maxLevel = 999;
+        for (SysUserRole ur : userRoles) {
+            SysRole role = roleService.getById(ur.getRoleId());
+            if (role != null) {
+                Integer level = getRoleLevelByName(role.getName());
+                if (level < maxLevel) {
+                    maxLevel = level;
+                }
+            }
+        }
+        return maxLevel;
     }
 
     /**

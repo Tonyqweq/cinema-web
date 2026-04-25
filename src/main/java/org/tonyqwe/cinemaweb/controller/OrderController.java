@@ -4,6 +4,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.tonyqwe.cinemaweb.domain.dto.OrderRequest;
 import org.tonyqwe.cinemaweb.domain.entity.Orders;
@@ -186,22 +187,33 @@ public class OrderController {
 
     /**
      * 管理后台获取订单列表
-     * GET /api/admin/orders
+     * GET /api/orders/admin
+     * @param cinemaId 可选的影院ID筛选参数
      */
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'STAFF')") // 订单管理允许 SUPER_ADMIN, ADMIN, STAFF
     @GetMapping("/admin")
-    public ResponseEntity<ResponseResult<List<Orders>>> getAdminOrders() {
+    public ResponseEntity<ResponseResult<List<Orders>>> getAdminOrders(
+            @RequestParam(required = false) Long cinemaId) {
         try {
             List<Orders> orders;
 
             if (SecurityUtils.isSuperAdmin()) {
-                // SUPER_ADMIN可以查看所有订单
-                orders = orderService.getAllOrders();
+                // SUPER_ADMIN可以查看所有订单，可按影院筛选
+                if (cinemaId != null) {
+                    orders = orderService.getOrdersByCinemaId(cinemaId);
+                } else {
+                    orders = orderService.getAllOrders();
+                }
             } else if (SecurityUtils.isAdmin() || SecurityUtils.isStaff()) {
                 // ADMIN和STAFF只能查看绑定影院的订单
                 String username = SecurityUtils.getCurrentUsername();
                 if (username != null) {
                     Long userCinemaId = adminCinemaRelationService.getCinemaIdByAdminUsername(username);
                     if (userCinemaId != null) {
+                        // 如果传入了cinemaId，检查是否与绑定影院匹配
+                        if (cinemaId != null && !cinemaId.equals(userCinemaId)) {
+                            return ResponseEntity.ok(ResponseResult.error(403, "无权查看该影院的订单"));
+                        }
                         orders = orderService.getOrdersByCinemaId(userCinemaId);
                     } else {
                         return ResponseEntity.ok(ResponseResult.error(403, "未绑定影院，无法查看订单"));
